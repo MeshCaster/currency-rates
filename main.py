@@ -1,7 +1,8 @@
 import asyncio
 from datetime import date
 
-from rates_provider_integration.models.common import RateProviderError, default_client
+from rates_provider_integration.errors import RateProviderError
+from rates_provider_integration.http_clients import default_client
 from rates_provider_integration.crypto.binance import BinanceProvider
 from rates_provider_integration.crypto.coinbase import CoinbaseProvider
 from rates_provider_integration.crypto.coin_gecko import CoinGeckoProvider

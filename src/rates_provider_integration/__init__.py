@@ -1,4 +1,5 @@
-from rates_provider_integration.models.common import Rate, RateProvider, RateProviderError, default_client
+from rates_provider_integration.errors import IntegrationError, RateProviderError
+from rates_provider_integration.http_clients import default_client
 
 from .fx.er import ERApiProvider
 from .fx.frankfurter import FrankfurterProvider
@@ -10,9 +11,8 @@ from .crypto.binance import BinanceProvider
 from .crypto.coinbase import CoinbaseProvider
 
 __all__ = [
-    "Rate",
-    "RateProvider",
     "RateProviderError",
+    "IntegrationError",
     "default_client",
     "ERApiProvider",
     "FrankfurterProvider",

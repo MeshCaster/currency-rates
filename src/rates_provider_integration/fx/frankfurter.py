@@ -3,7 +3,9 @@ from datetime import date, datetime, time, timezone
 import httpx
 from pydantic import TypeAdapter
 
-from rates_provider_integration.models.common import Rate, RateProviderError, default_client
+from domain.models import Rate
+from rates_provider_integration.errors import RateProviderError
+from rates_provider_integration.http_clients import default_client
 from rates_provider_integration.models.frankfurter import FrankfurterRate
 
 _rows_adapter = TypeAdapter(list[FrankfurterRate])

@@ -59,5 +59,9 @@ dmypy.json
 *.swp
 *.swo
 
+*.db
+*.sqlite
+*.sqlite3
+
 .DS_Store
 Thumbs.db

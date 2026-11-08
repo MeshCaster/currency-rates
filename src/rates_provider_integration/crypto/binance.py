@@ -4,8 +4,10 @@ import json
 import httpx
 from pydantic import TypeAdapter
 
-from ..models.binance import BinanceTicker
-from ..models.common import Rate, RateProviderError, default_client
+from domain.models import Rate
+from rates_provider_integration.models.binance import BinanceTicker
+from rates_provider_integration.errors import RateProviderError
+from rates_provider_integration.http_clients import default_client
 
 _tickers_adapter = TypeAdapter(list[BinanceTicker])
 

@@ -2,9 +2,11 @@ from datetime import datetime, timezone
 
 import httpx
 
-from ..models.kraken import _KRAKEN_ASSETS, KrakenTickerResponse, KrakenTicker
+from domain.models import Rate
+from rates_provider_integration.models.kraken import _KRAKEN_ASSETS, KrakenTickerResponse, KrakenTicker
 
-from ..models.common import Rate, RateProviderError, default_client
+from rates_provider_integration.errors import RateProviderError
+from rates_provider_integration.http_clients import default_client
 
 class KrakenProvider:
     BASE_URL = "https://api.kraken.com/0/public/"

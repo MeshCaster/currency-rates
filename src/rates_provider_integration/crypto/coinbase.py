@@ -2,8 +2,10 @@ from datetime import date, datetime, time, timezone
 
 import httpx
 
-from ..models.coinbase import PriceKind, CoinbasePriceResponse
-from ..models.common import Rate, RateProviderError, default_client
+from domain.models import Rate
+from rates_provider_integration.models.coinbase import PriceKind, CoinbasePriceResponse
+from rates_provider_integration.errors import RateProviderError
+from rates_provider_integration.http_clients import default_client
 
 
 class CoinbaseProvider:

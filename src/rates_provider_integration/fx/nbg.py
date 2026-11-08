@@ -4,8 +4,10 @@ from decimal import Decimal
 import httpx
 from pydantic import TypeAdapter
 
-from rates_provider_integration.models.common import Rate, RateProviderError, default_client
-from rates_provider_integration.models.nbg import NBGRatesResponse, NBGRate
+from domain.models import Rate
+from rates_provider_integration.errors import RateProviderError
+from rates_provider_integration.http_clients import default_client
+from rates_provider_integration.models.nbg import GEL, NBGRatesResponse, NBGRate
 
 _response_adapter = TypeAdapter(list[NBGRatesResponse])
 

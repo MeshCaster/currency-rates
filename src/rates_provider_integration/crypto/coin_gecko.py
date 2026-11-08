@@ -5,8 +5,10 @@ from decimal import Decimal
 import httpx
 from pydantic import TypeAdapter
 
-from ..models.coin_gecko import DEFAULT_COIN_IDS
-from ..models.common import Rate, RateProviderError, default_client
+from domain.models import Rate
+from rates_provider_integration.models.coin_gecko import DEFAULT_COIN_IDS
+from rates_provider_integration.errors import RateProviderError
+from rates_provider_integration.http_clients import default_client
 
 _price_adapter = TypeAdapter(dict[str, dict[str, Decimal]])
 

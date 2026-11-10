@@ -30,6 +30,14 @@ class Settings(BaseSettings):
     def is_development(self) -> bool:
         return self.app_env == "development"
 
+    @property
+    def is_staging(self) -> bool:
+        return self.app_env == "staging"
+
+    @property
+    def is_production(self) -> bool:
+        return self.app_env == "production"
+
 @lru_cache
 def get_settings() -> Settings:
     return Settings()

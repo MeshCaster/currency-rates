@@ -1,0 +1,20 @@
+services:
+  db:
+    image: timescale/timescaledb:latest-pg17
+    container_name: currency-rates-db
+    environment:
+      POSTGRES_USER: rates
+      POSTGRES_PASSWORD: rates
+      POSTGRES_DB: rates
+    ports:
+      - "5433:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U rates -d rates"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+volumes:
+  pgdata:

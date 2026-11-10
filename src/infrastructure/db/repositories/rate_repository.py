@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from datetime import datetime, timezone
-from enum import StrEnum
 from typing import Sequence, NamedTuple, Any
 
 from sqlalchemy import select, func
@@ -10,16 +9,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from common.models import Page
 from infrastructure.db.models.rate import RateRow
 from infrastructure.db.repositories.repository import SqlAlchemyRepository
+from domain.enums import OFFICIAL_KINDS, RateKind
 from domain.models import Rate
-
-
-class RateKind(StrEnum):
-    OBSERVATION = "observation"
-    RESOLVED = "resolved"
-    CROSS = "cross"
-
-
-OFFICIAL_KINDS = (RateKind.RESOLVED.value, RateKind.CROSS.value)
 
 
 class RateKey(NamedTuple):

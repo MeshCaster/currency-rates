@@ -20,7 +20,7 @@ target_metadata = Base.metadata
 
 
 def get_url() -> str:
-    return os.getenv("DATABASE_URL") or config.get_main_option("sqlalchemy.url")
+    return "postgresql+asyncpg://rates:rates@localhost:5433/rates"
 
 
 def run_migrations_offline() -> None:

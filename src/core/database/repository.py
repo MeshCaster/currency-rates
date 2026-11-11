@@ -1,13 +1,52 @@
-from typing import Any, ClassVar, Iterable, Protocol, Sequence
+from typing import Any, ClassVar, Iterable, Protocol, Sequence, cast
 
-from sqlalchemy import select, update, delete, and_, tuple_, ColumnElement, func
+from sqlalchemy import (CursorResult, select, update, delete, and_, or_, tuple_, ColumnElement,
+                        func)
 from sqlalchemy.ext.asyncio.session import AsyncSession
 
-from common.models import Page
+from core.pagination import Page
 from core.database.errors import ConcurrencyError, DuplicateError, NotFoundError
 from core.database.mapper import Mapper
 from core.database.orm import Base
 
+
+def _dialect_insert(session: AsyncSession) -> Any:
+    dialect = session.get_bind().dialect.name
+    if dialect == "postgresql":
+        from sqlalchemy.dialects.postgresql import insert as pg_insert
+        return pg_insert
+    if dialect == "sqlite":
+        from sqlalchemy.dialects.sqlite import insert as sqlite_insert
+        return sqlite_insert
+    raise NotImplementedError(f"Unsupported dialect {dialect!r}")
+
+
+async def insert_ignore(session: AsyncSession, row_type: type[Base],
+                        rows: list[dict[str, Any]]) -> int:
+    if not rows:
+        return 0
+    insert = _dialect_insert(session)
+    result = cast(CursorResult[Any], await session.execute(
+        insert(row_type).values(rows).on_conflict_do_nothing()))
+    return max(result.rowcount, 0)
+
+
+async def upsert(session: AsyncSession, row_type: type[Base], rows: list[dict[str, Any]], *,
+                 conflict_columns: Sequence[str],
+                 update_columns: Sequence[str]) -> int:
+    if not rows:
+        return 0
+    insert = _dialect_insert(session)
+    stmt = insert(row_type).values(rows)
+    table, new = row_type.__table__, stmt.excluded
+    values: dict[str, Any] = {column: new[column] for column in update_columns}
+    if "updated_at" in table.c:
+        values["updated_at"] = func.now()
+    stmt = stmt.on_conflict_do_update(
+        index_elements=list(conflict_columns), set_=values,
+        where=or_(*(table.c[column].is_distinct_from(new[column]) for column in update_columns)))
+    result = cast(CursorResult[Any], await session.execute(stmt))
+    return max(result.rowcount, 0)
 
 
 class Repository[TEntity, TId](Protocol):
@@ -148,15 +187,7 @@ class SqlAlchemyRepository[TEntity, TId, TRow: Base]:
         return Page([self.mapper.to_domain(r) for r in rows], await self._count(*criteria), page, size)
 
     async def _insert_ignore(self, rows: list[dict[str, Any]]) -> int:
-        dialect = self._session.get_bind().dialect.name
-        if dialect == "postgresql":
-            from sqlalchemy.dialects.postgresql import insert
-        elif dialect == "sqlite":
-            from sqlalchemy.dialects.sqlite import insert
-        else:
-            raise NotImplementedError(f"Unsupported dialect {dialect!r}")
-        result = await self._session.execute(insert(self.row_type).values(rows).on_conflict_do_nothing())
-        return max(result.rowcount, 0)
+        return await insert_ignore(self._session, self.row_type, rows)
 
     def _bump_version(self, entity: TEntity) -> None:
         if self.version_column and hasattr(entity, self.version_column):

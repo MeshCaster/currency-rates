@@ -1,5 +1,3 @@
-import uuid
-from datetime import date
 from typing import Sequence, Union
 
 from alembic import op
@@ -10,31 +8,6 @@ revision: str = '0002'
 down_revision: Union[str, Sequence[str], None] = '0001'
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
-
-PROVIDERS = [
-    ("frankfurter", "Frankfurter", "fx", False),
-    ("nbg", "National Bank of Georgia", "fx", False),
-    ("exchangerate-api", "ExchangeRate-API", "fx", True),
-    ("binance", "Binance", "crypto", False),
-    ("coinbase", "Coinbase", "crypto", False),
-    ("kraken", "Kraken", "crypto", False),
-    ("coingecko", "CoinGecko", "crypto", False),
-]
-
-INTERVALS = [
-    ("frankfurter", "daily", True, date(1999, 1, 4), None, None),
-    ("frankfurter", "monthly", True, date(1999, 1, 4), None, None),
-    ("nbg", "daily", True, date(1996, 1, 6), None, 1),
-    ("nbg", "monthly", False, date(1996, 1, 6), None, 1),
-    ("binance", "daily", True, None, None, 1000),
-    ("binance", "monthly", True, None, None, 1000),
-    ("coinbase", "daily", True, date(2023, 10, 1), None, 1),
-    ("coinbase", "monthly", False, date(2023, 10, 1), None, 1),
-    ("kraken", "daily", True, None, 720, 720),
-    ("kraken", "monthly", False, None, 720, 720),
-    ("coingecko", "daily", True, None, 365, None),
-    ("coingecko", "monthly", False, None, 365, None),
-]
 
 
 def upgrade() -> None:
@@ -118,26 +91,6 @@ def upgrade() -> None:
     op.add_column('rates', sa.Column('updated_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False))
 
     op.execute("UPDATE rates SET created_at = fetched_at, updated_at = fetched_at")
-    _seed_providers()
-
-
-def _seed_providers() -> None:
-    providers = sa.table("providers", sa.column("id", sa.Uuid()), sa.column("key"),
-                         sa.column("display_name"), sa.column("kind"),
-                         sa.column("requires_api_key", sa.Boolean()))
-    intervals = sa.table("provider_intervals", sa.column("id", sa.Uuid()),
-                         sa.column("provider_id", sa.Uuid()), sa.column("interval"),
-                         sa.column("is_native", sa.Boolean()), sa.column("history_start", sa.Date()),
-                         sa.column("history_window_days", sa.Integer()),
-                         sa.column("max_points_per_request", sa.Integer()))
-    ids = {key: uuid.uuid7() for key, *_ in PROVIDERS}
-    op.bulk_insert(providers, [
-        {"id": ids[key], "key": key, "display_name": name, "kind": kind, "requires_api_key": api_key}
-        for key, name, kind, api_key in PROVIDERS])
-    op.bulk_insert(intervals, [
-        {"id": uuid.uuid7(), "provider_id": ids[key], "interval": interval, "is_native": native,
-         "history_start": start, "history_window_days": window, "max_points_per_request": page}
-        for key, interval, native, start, window, page in INTERVALS])
 
 
 def downgrade() -> None:

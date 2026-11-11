@@ -4,8 +4,7 @@ from decimal import Decimal
 from typing import Any
 from uuid import UUID
 
-from domain.enums import IntervalKind, ProviderKind, SyncStatus
-
+from enums import IntervalKind, ProviderKind, SyncStatus
 
 @dataclass(frozen=True, slots=True)
 class Rate:

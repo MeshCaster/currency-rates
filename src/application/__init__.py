@@ -1,6 +1,6 @@
 from application.ports import (HistoricalRateProvider, ProviderCatalog, RateHistoryProvider,
                                RateProvider, RateRepository, SubscriptionRepository,
-                               SyncConfigurationRepository, UserRepository)
+                               SyncConfigurationRepository, UserRepository, EmailSender)
 from application.services.alerts.alert_rule_service import AlertRuleService
 from application.services.alerts.alert_service import AlertService
 from application.services.alerts.models import AlertRuleChanges, AlertTickResult, NewAlertRule
@@ -9,6 +9,8 @@ from application.services.users.auth_service import AdminSeedOutcome, AuthServic
 from application.services.users.models import (IssuedToken, NewSubscription, SignedIn,
                                                SubscriptionChanges)
 from application.services.users.subscription_service import SubscriptionService
+from application.services.notifications.digest import (ComposedEmail, Digest, FeedQuote,
+                                                      compose_digest, plan_digests)
 from application.services.rate.models import (ConfigSyncResult, NewSyncConfiguration,
                                              SyncConfigurationView, SyncFailure, SyncResult)
 
@@ -30,4 +32,5 @@ __all__ = ["RateProvider", "HistoricalRateProvider", "RateRepository",
            "AlertRuleService", "AlertService", "PriceAlertService", "NewAlertRule",
            "AlertRuleChanges", "AlertTickResult", "AuthService", "AdminSeedOutcome",
            "TokenIssuer", "IssuedToken", "SignedIn", "NewSubscription", "SubscriptionChanges",
-           "SubscriptionService", "UserRepository", "SubscriptionRepository"]
+           "SubscriptionService", "UserRepository", "SubscriptionRepository", "EmailSender",
+           "ComposedEmail", "Digest", "FeedQuote", "compose_digest", "plan_digests"]

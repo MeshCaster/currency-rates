@@ -1,11 +1,16 @@
+from collections.abc import Collection
+from datetime import date
 from typing import Any
 from uuid import UUID
 
+from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.database.mapper import DataclassMapper
 from core.database.repository import SqlAlchemyRepository
 from domain.users import Subscription, User, normalize_email
+from infrastructure.db.models.provider import ProviderRow
+from infrastructure.db.models.sync_configuration import SyncConfigurationRow
 from infrastructure.db.models.user import SubscriptionRow, UserRow
 
 
@@ -57,3 +62,20 @@ class SqlSubscriptionRepository(SqlAlchemyRepository[Subscription, UUID, Subscri
         return bool(await self._find(SubscriptionRow.user_id == user_id,
                                      SubscriptionRow.sync_configuration_id == sync_configuration_id,
                                      limit=1))
+
+    async def list_deliverable(self) -> list[tuple[Subscription, str]]:
+        stmt = (select(SubscriptionRow, UserRow.email)
+                .join(UserRow, UserRow.id == SubscriptionRow.user_id)
+                .where(SubscriptionRow.is_active, UserRow.is_active,
+                       SubscriptionRow.sync_configuration.has(
+                           (SyncConfigurationRow.is_active)
+                           & SyncConfigurationRow.provider.has(ProviderRow.is_active)))
+                .order_by(UserRow.email, SubscriptionRow.id))
+        rows = (await self._session.execute(stmt)).all()
+        return [(self.mapper.to_domain(row), email) for row, email in rows]
+
+    async def mark_sent(self, ids: Collection[UUID], on: date) -> None:
+        if ids:
+            await self._session.execute(
+                update(SubscriptionRow).where(SubscriptionRow.id.in_(list(ids)))
+                .values(last_sent_on=on).execution_options(synchronize_session=False))

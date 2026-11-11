@@ -107,4 +107,5 @@ packages = [
     "src/host",
     "src/infrastructure",
     "src/rates_provider_integration",
+    "src/smtp_integration",
 ]

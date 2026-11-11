@@ -1,5 +1,5 @@
 from dataclasses import dataclass, field
-from datetime import date
+from datetime import date, datetime, time, timedelta
 from uuid import UUID
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
@@ -58,3 +58,14 @@ class Subscription:
     @property
     def zone(self) -> ZoneInfo:
         return ZoneInfo(self.timezone)
+
+    def due_on(self, now: datetime, catch_up: timedelta) -> date | None:
+        if not self.is_active:
+            return None
+        local = now.astimezone(self.zone)
+        scheduled = datetime.combine(local.date(), time(self.hour), tzinfo=self.zone)
+        if not scheduled <= local < scheduled + catch_up:
+            return None
+        if self.last_sent_on is not None and self.last_sent_on >= local.date():
+            return None
+        return local.date()

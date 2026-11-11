@@ -3,7 +3,8 @@ from typing import Any
 
 import httpx
 
-from application.ports import RateHistoryProvider, RateProvider
+from application.ports import EmailSender, RateHistoryProvider, RateProvider
+from core.configuration.smtp_config import SmtpSettings
 from domain.errors import UnsupportedSyncError
 from rates_provider_integration.crypto.binance import BinanceProvider
 from rates_provider_integration.crypto.coin_gecko import CoinGeckoProvider
@@ -12,10 +13,21 @@ from rates_provider_integration.crypto.kraken import KrakenProvider
 from rates_provider_integration.fx.frankfurter import FrankfurterProvider
 from rates_provider_integration.fx.nbg import NBGProvider
 from rates_provider_integration.history import DailyHistory
+from smtp_integration import SmtpMailer
 
 
 def default_provider(http_client: httpx.AsyncClient) -> RateProvider:
     return NBGProvider(http_client)
+
+
+def smtp_mailer(settings: SmtpSettings) -> EmailSender | None:
+    if settings.host is None:
+        return None
+    return SmtpMailer(settings.host, settings.port, security=settings.security,
+                      username=settings.username,
+                      password=settings.password.get_secret_value() if settings.password
+                      else None,
+                      from_address=settings.from_address, timeout=settings.timeout_seconds)
 
 
 type HistoryBuilder = Callable[[httpx.AsyncClient, Mapping[str, Any]], RateHistoryProvider]

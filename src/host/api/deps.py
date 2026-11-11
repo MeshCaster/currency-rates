@@ -1,10 +1,16 @@
+from typing import Annotated
+from uuid import UUID
+
 from fastapi import Depends, Request
 
 from application.ports import RateProvider, RateRepository
-from application import (AlertRuleService, AlertService, HistoricalRateSyncService,
-                         RateQueryService,
+from application import (AlertRuleService, AlertService, AuthService, HistoricalRateSyncService,
+                         IssuedToken, RateQueryService, SubscriptionService,
                          SyncConfigurationAdminService, SyncConfigurationQueryService)
-from core.dependencies import DbSessionDep, SettingsDep
+from core.dependencies import CurrentPrincipalDep, DbSessionDep, SettingsDep
+from core.exceptions.unauthorized_error import UnauthorizedError
+from core.security.token import create_access_token
+from domain.users import User
 from host.providers import HistoryProviders
 from infrastructure.db.repositories.alert_repository import (
     SqlAlertRepository,
@@ -12,6 +18,10 @@ from infrastructure.db.repositories.alert_repository import (
 )
 from infrastructure.db.repositories.provider_repository import SqlProviderRepository
 from infrastructure.db.repositories.rate_repository import SqlRateRepository
+from infrastructure.db.repositories.user_repository import (
+    SqlSubscriptionRepository,
+    SqlUserRepository,
+)
 from infrastructure.db.repositories.sync_configuration_repository import (
     SqlSyncConfigurationRepository,
 )
@@ -52,3 +62,33 @@ def get_alert_rule_service(session: DbSessionDep, settings: SettingsDep) -> Aler
 
 def get_alert_service(session: DbSessionDep) -> AlertService:
     return AlertService(SqlAlertRepository(session))
+
+
+def get_auth_service(session: DbSessionDep, settings: SettingsDep) -> AuthService:
+    security = settings.security
+
+    def issue(user: User) -> IssuedToken:
+        return IssuedToken(create_access_token(str(user.id), security, scopes=user.scopes),
+                           expires_in=security.access_token_expire_minutes * 60)
+
+    return AuthService(SqlUserRepository(session), issue)
+
+
+AuthDep = Annotated[AuthService, Depends(get_auth_service)]
+
+
+async def get_current_user(principal: CurrentPrincipalDep, auth: AuthDep) -> User:
+    try:
+        user_id = UUID(principal.sub)
+    except ValueError:
+        raise UnauthorizedError("this token isn't for a user account",
+                                code="not_a_user_token") from None
+    return await auth.current_user(user_id)
+
+
+CurrentUserDep = Annotated[User, Depends(get_current_user)]
+
+
+def get_subscription_service(session: DbSessionDep) -> SubscriptionService:
+    return SubscriptionService(SqlSubscriptionRepository(session),
+                               SqlSyncConfigurationRepository(session))

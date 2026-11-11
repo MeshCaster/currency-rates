@@ -14,6 +14,8 @@ from core.middleware.setup import setup_middleware
 from host.api.health import router as health_router
 from host.api.routes import router
 from host.api.alerts import alerts_router, rules_router
+from host.api.auth import router as auth_router
+from host.api.subscriptions import router as subscriptions_router
 from host.api.sync_configurations import router as sync_configurations_router
 from host.providers import default_provider
 
@@ -50,4 +52,6 @@ def create_app(settings: Settings | None = None, *,
     app.include_router(sync_configurations_router, prefix=settings.api_prefix)
     app.include_router(rules_router, prefix=settings.api_prefix)
     app.include_router(alerts_router, prefix=settings.api_prefix)
+    app.include_router(auth_router, prefix=settings.api_prefix)
+    app.include_router(subscriptions_router, prefix=settings.api_prefix)
     return app

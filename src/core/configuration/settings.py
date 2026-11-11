@@ -4,6 +4,7 @@ from functools import lru_cache
 from pydantic import Field, model_validator
 from pydantic_settings import SettingsConfigDict, BaseSettings
 
+from core.configuration.admin_config import AdminSettings
 from core.configuration.alert_config import AlertSettings
 from core.configuration.cors_config import CorsSettings
 from core.configuration.database_config import DatabaseSettings
@@ -49,6 +50,7 @@ class Settings(BaseSettings):
     otel: OtelSettings = Field(default_factory=OtelSettings)
     history_sync: HistorySyncSettings = Field(default_factory=HistorySyncSettings)
     alerts: AlertSettings = Field(default_factory=AlertSettings)
+    admin: AdminSettings = Field(default_factory=AdminSettings)
     worker: WorkerSettings = Field(default_factory=WorkerSettings)
 
     @property

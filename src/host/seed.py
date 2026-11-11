@@ -2,9 +2,11 @@ import asyncio
 import logging
 from datetime import UTC, datetime
 
+from application import AuthService
 from core.configuration.settings import Settings, get_settings
 from core.database.session import Database
 from core.logging import configure_logging
+from infrastructure.db.repositories.user_repository import SqlUserRepository
 from infrastructure.db.seed import seed_catalog, seed_dev_sync
 
 logger = logging.getLogger(__name__)
@@ -15,6 +17,11 @@ async def seed(settings: Settings, db: Database) -> None:
         catalog = await seed_catalog(session)
         sync = (await seed_dev_sync(session, datetime.now(UTC).date())
                 if settings.is_development else 0)
+        admin = settings.admin
+        if admin.email and admin.password:
+            outcome = await AuthService(SqlUserRepository(session)).ensure_admin(
+                admin.email, admin.password.get_secret_value())
+            logger.info("Seed: admin %s %s", admin.email, outcome)
     logger.info("Seed: %d currencies, %d providers, %d intervals, %d provider currencies "
                 "inserted or changed; %d dev sync configurations added",
                 catalog.currencies, catalog.providers, catalog.intervals,

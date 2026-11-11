@@ -10,8 +10,10 @@ from domain.enums import (
     RateKind,
     SyncState,
     SyncStatus,
+    UserRole,
 )
 from domain.errors import DomainError
+from domain.users import ROLE_SCOPES, Subscription, User
 from domain.models import (
     IntervalCapability,
     ProviderCapability,
@@ -43,4 +45,8 @@ __all__ = [
     "SyncProgress",
     "SyncState",
     "SyncStatus",
+    "ROLE_SCOPES",
+    "Subscription",
+    "User",
+    "UserRole",
 ]

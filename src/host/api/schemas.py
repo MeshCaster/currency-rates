@@ -1,11 +1,19 @@
 from datetime import date, datetime
 from decimal import Decimal
-from typing import Any
+from typing import Annotated, Any
 from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
-from application import AlertRuleChanges, NewAlertRule, NewSyncConfiguration, SyncConfigurationView
+from application import (
+    AlertRuleChanges,
+    NewAlertRule,
+    NewSubscription,
+    NewSyncConfiguration,
+    SignedIn,
+    SubscriptionChanges,
+    SyncConfigurationView,
+)
 from domain.alerts import Alert, AlertRule, AlertTier
 from domain.enums import (
     AlertSeverity,
@@ -14,7 +22,10 @@ from domain.enums import (
     PriceDirection,
     SyncState,
     SyncStatus,
+    UserRole,
 )
+from domain.models import SyncConfig
+from domain.users import Subscription, User
 
 
 class RateOut(BaseModel):
@@ -202,3 +213,87 @@ class AlertPageOut(BaseModel):
     total: int
     page: int
     size: int
+
+
+Email = Annotated[str, Field(max_length=320, pattern=r"^[^@\s]+@[^@\s]+\.[^@\s]+$",
+                             examples=["you@example.com"])]
+
+
+class RegisterIn(BaseModel):
+    email: Email
+    password: str = Field(min_length=8, max_length=128)
+
+
+class SignInIn(BaseModel):
+    email: Email
+    password: str = Field(min_length=1, max_length=128)
+
+
+class UserOut(BaseModel):
+    id: UUID
+    email: str
+    role: UserRole
+    scopes: list[str]
+
+    @classmethod
+    def of(cls, user: User) -> UserOut:
+        return cls(id=user.id, email=user.email, role=user.role, scopes=list(user.scopes))
+
+
+class TokenOut(BaseModel):
+    access_token: str
+    token_type: str = "bearer"  # noqa: S105
+    expires_in: int = Field(description="Seconds until the token expires; sign in again then")
+    user: UserOut
+
+    @classmethod
+    def of(cls, signed_in: SignedIn) -> TokenOut:
+        return cls(access_token=signed_in.token.access_token,
+                   expires_in=signed_in.token.expires_in, user=UserOut.of(signed_in.user))
+
+
+class FeedOut(BaseModel):
+    id: UUID
+    provider: str
+    base: str
+    quote: str
+
+    @classmethod
+    def of(cls, config: SyncConfig) -> FeedOut:
+        return cls(id=config.id, provider=config.provider, base=config.base, quote=config.quote)
+
+
+class SubscriptionIn(BaseModel):
+    feed_id: UUID = Field(description="From GET /feeds")
+    hour: int = Field(ge=0, le=23, description="Hour of the day to get the email, 0-23")
+    timezone: str = Field(default="UTC", max_length=64,
+                          description="IANA time zone the hour is in, e.g. Asia/Tbilisi")
+    is_active: bool = True
+
+    def to_command(self) -> NewSubscription:
+        return NewSubscription(self.feed_id, self.hour, self.timezone, self.is_active)
+
+
+class SubscriptionPatch(BaseModel):
+    hour: int | None = Field(default=None, ge=0, le=23)
+    timezone: str | None = Field(default=None, max_length=64)
+    is_active: bool | None = None
+
+    def to_changes(self) -> SubscriptionChanges:
+        return SubscriptionChanges(self.hour, self.timezone, self.is_active)
+
+
+class SubscriptionOut(BaseModel):
+    id: UUID
+    feed: FeedOut
+    hour: int
+    timezone: str
+    is_active: bool
+    last_sent_on: date | None
+
+    @classmethod
+    def of(cls, sub: Subscription) -> SubscriptionOut:
+        return cls(id=sub.id, feed=FeedOut(id=sub.sync_configuration_id, provider=sub.provider,
+                                           base=sub.base, quote=sub.quote),
+                   hour=sub.hour, timezone=sub.timezone, is_active=sub.is_active,
+                   last_sent_on=sub.last_sent_on)

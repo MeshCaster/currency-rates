@@ -19,3 +19,7 @@ class InvalidAlertRuleError(DomainError):
 
 class AlertStateError(DomainError):
     pass
+
+
+class InvalidSubscriptionError(DomainError):
+    pass

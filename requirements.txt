@@ -12,3 +12,5 @@ greenlet>=3
 
 pydantic-settings
 starlette
+pyjwt
+opentelemetry-instrumentation-openai

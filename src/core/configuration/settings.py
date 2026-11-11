@@ -6,11 +6,12 @@ from pydantic_settings import SettingsConfigDict, BaseSettings
 
 from core.configuration.cors_config import CorsSettings
 from core.configuration.database_config import DatabaseSettings
+from core.configuration.history_sync_config import HistorySyncSettings
 from core.configuration.http_client_config import HttpClientSettings
 from core.configuration.log_config import LogSettings
 from core.configuration.otel_config import OtelSettings
-from core.configuration.rate_sync_config import RateSyncSettings
 from core.configuration.security_config import SecuritySettings, _INSECURE_DEFAULT_SECRET
+from core.configuration.worker_config import WorkerSettings
 from core.constants import Environment, LogFormat
 
 
@@ -45,7 +46,8 @@ class Settings(BaseSettings):
     cors: CorsSettings = Field(default_factory=CorsSettings)
     http_client: HttpClientSettings = Field(default_factory=HttpClientSettings)
     otel: OtelSettings = Field(default_factory=OtelSettings)
-    rate_sync: RateSyncSettings = Field(default_factory=RateSyncSettings)
+    history_sync: HistorySyncSettings = Field(default_factory=HistorySyncSettings)
+    worker: WorkerSettings = Field(default_factory=WorkerSettings)
 
     @property
     def is_development(self) -> bool:

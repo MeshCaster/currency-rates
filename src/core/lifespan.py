@@ -37,15 +37,7 @@ def create_http_client(settings: Settings) -> httpx.AsyncClient:
 
 
 @asynccontextmanager
-async def lifespan(app: FastAPI) -> AsyncIterator[AppState]:
-    settings: Settings = app.state.settings
-    logger.info(
-        "Starting %s v%s",
-        settings.app_name,
-        settings.app_version,
-        extra={"environment": settings.app_env.value},
-    )
-
+async def app_resources(settings: Settings) -> AsyncIterator[AppState]:
     async with AsyncExitStack() as stack:
         http_client = await stack.enter_async_context(create_http_client(settings))
 
@@ -56,6 +48,20 @@ async def lifespan(app: FastAPI) -> AsyncIterator[AppState]:
             if not await db.ping():
                 logger.warning("Database not reachable at startup; readiness will report it")
 
-        logger.info("Startup complete")
         yield {"http_client": http_client, "db": db}
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI) -> AsyncIterator[AppState]:
+    settings: Settings = app.state.settings
+    logger.info(
+        "Starting %s v%s",
+        settings.app_name,
+        settings.app_version,
+        extra={"environment": settings.app_env.value},
+    )
+
+    async with app_resources(settings) as state:
+        logger.info("Startup complete")
+        yield state
         logger.info("Shutting down")

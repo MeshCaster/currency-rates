@@ -3,6 +3,7 @@ from datetime import date, datetime, time, timezone
 import httpx
 from pydantic import TypeAdapter
 
+from domain.enums import IntervalKind
 from domain.models import Rate
 from rates_provider_integration.errors import RateProviderError
 from rates_provider_integration.http_clients import default_client
@@ -13,6 +14,7 @@ _rows_adapter = TypeAdapter(list[FrankfurterRate])
 class FrankfurterProvider:
     BASE_URL = "https://api.frankfurter.dev/v2/"
     name = "frankfurter"
+    chunk_days = 366
 
     def __init__(self, client: httpx.AsyncClient | None = None, *,
                  providers: str | None = None) -> None:
@@ -35,9 +37,11 @@ class FrankfurterProvider:
         content = await self._get(f"{self.BASE_URL}rates", params)
         return [self._to_rate(row) for row in _rows_adapter.validate_json(content)]
 
-    async def get_history(self, base: str, quote: str, start: date,
-                          end: date | None = None) -> list[Rate]:
-        params = self._params(base=base.upper(), quotes=quote.upper(), **{"from": start, "to": end})
+    async def get_history(self, base: str, quote: str, start: date, end: date | None = None,
+                          interval: IntervalKind = IntervalKind.DAILY) -> list[Rate]:
+        group = "month" if interval is IntervalKind.MONTHLY else None
+        params = self._params(base=base.upper(), quotes=quote.upper(), group=group,
+                              **{"from": start, "to": end})
         content = await self._get(f"{self.BASE_URL}rates", params)
         return [self._to_rate(row) for row in _rows_adapter.validate_json(content)]
 

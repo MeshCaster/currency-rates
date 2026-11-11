@@ -6,11 +6,11 @@ from typing import Sequence, NamedTuple, Any
 from sqlalchemy import select, func
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from common.models import Page
 from infrastructure.db.models.rate import RateRow
 from domain.enums import OFFICIAL_KINDS, RateKind
 from domain.models import Rate
-from core.database.repository import SqlAlchemyRepository
+from core.database.repository import SqlAlchemyRepository, upsert
+from core.pagination import Page
 
 
 class RateKey(NamedTuple):
@@ -52,6 +52,12 @@ class SqlRateRepository(SqlAlchemyRepository[Rate, RateKey, RateRow]):
             return 0
         rows = [self.mapper.to_values(r, kind) for r in rates]
         return await self._insert_ignore(rows)
+
+    async def upsert_many(self, rates: Sequence[Rate]) -> int:
+        if not rates:
+            return 0
+        return await upsert(self._session, RateRow, [self.mapper.to_values(r) for r in rates],
+                            conflict_columns=self.id_columns, update_columns=("value",))
 
     async def add_sync_result(self, accepted: Sequence[Rate], resolved: Rate | None) -> int:
         resolved_key = RateKey.of(resolved) if resolved else None

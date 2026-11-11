@@ -2,14 +2,10 @@ from datetime import date
 
 from fastapi import APIRouter, Depends, Query
 
-from application import RateQueryService, RateSyncService, HistoricalRateSyncService
+from application import HistoricalRateSyncService, RateQueryService
 from core.exceptions.bad_request_error import BadRequestError
 from core.exceptions.not_found_error import NotFoundError
-from host.api.deps import (
-    get_historical_sync_service,
-    get_query_service,
-    get_sync_service,
-)
+from host.api.deps import get_historical_sync_service, get_query_service
 from host.api.schemas import RateHistoryOut, RateOut, SyncResultOut
 
 router = APIRouter(tags=["rates"])
@@ -34,11 +30,6 @@ async def history(base: str, quote: str, query: RateQueryService = Depends(get_q
     result = await query.history(base, quote, page=page, size=size)
     return RateHistoryOut(items=[RateOut.model_validate(r) for r in result.items],
                           total=result.total, page=result.page, size=result.size)
-
-
-@router.post("/rates/{base}/{quote}/sync", response_model=RateOut)
-async def sync_now(base: str, quote: str, service: RateSyncService = Depends(get_sync_service)):
-    return await service.sync(base, quote)
 
 
 @router.post("/rates/{base}/{quote}/backfill", response_model=SyncResultOut)

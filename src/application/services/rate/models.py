@@ -1,4 +1,6 @@
 from dataclasses import dataclass
+from datetime import date
+from uuid import UUID
 
 from domain import Rate
 
@@ -23,3 +25,12 @@ class SyncResult:
     @property
     def ok(self) -> bool:
         return not self.failures
+
+@dataclass(frozen=True, slots=True)
+class ConfigSyncResult:
+    config_id: UUID
+    start: date
+    end: date
+    fetched: int
+    stored: int
+    provisional: bool = False

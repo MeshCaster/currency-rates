@@ -13,37 +13,21 @@ from core.logging import configure_logging
 from core.middleware.setup import setup_middleware
 from host.api.health import router as health_router
 from host.api.routes import router
-from host.jobs.rate_sync import RateSyncJob
-from host.jobs.runner import JobRunner
-from rates_provider_integration.fx.nbg import NBGProvider
+from host.providers import default_provider
 
 logger = logging.getLogger(__name__)
 
 
-def create_app(settings: Settings | None = None, *, provider: RateProvider | None = None,
-               start_jobs: bool = True) -> FastAPI:
+def create_app(settings: Settings | None = None, *,
+               provider: RateProvider | None = None) -> FastAPI:
     settings = settings or get_settings()
     configure_logging(settings)
 
     @asynccontextmanager
     async def lifespan(app: FastAPI) -> AsyncIterator[dict[str, Any]]:
         async with core_lifespan(app) as state:
-            prov = provider or NBGProvider(state["http_client"])
-            db = state["db"]
-            jobs = []
-            if start_jobs and settings.rate_sync.enabled:
-                if db is None:
-                    logger.warning("Rate sync disabled: DATABASE__URL is not configured")
-                else:
-                    jobs.append(RateSyncJob(prov, db.session_factory,
-                                            settings.rate_sync.pair_tuples,
-                                            settings.rate_sync.interval_seconds))
-            runner = JobRunner(jobs)
-            await runner.start()
-            try:
-                yield {**state, "provider": prov}
-            finally:
-                await runner.stop()
+            prov = provider or default_provider(state["http_client"])
+            yield {**state, "provider": prov}
 
     app = FastAPI(
         title=settings.app_name,

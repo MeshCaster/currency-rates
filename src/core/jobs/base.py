@@ -8,7 +8,8 @@ logger = logging.getLogger(__name__)
 
 @runtime_checkable
 class Job(Protocol):
-    name: str
+    @property
+    def name(self) -> str: ...
 
     async def start(self) -> None: ...
     async def stop(self) -> None: ...
@@ -16,10 +17,13 @@ class Job(Protocol):
 
 class PeriodicJob(ABC):
 
-    def __init__(self, interval_seconds: float) -> None:
+    def __init__(self, interval_seconds: float, timeout_seconds: float | None = None) -> None:
         if interval_seconds <= 0:
             raise ValueError("interval_seconds must be > 0")
+        if timeout_seconds is not None and timeout_seconds <= 0:
+            raise ValueError("timeout_seconds must be > 0")
         self._interval = interval_seconds
+        self._timeout = timeout_seconds
         self._task: asyncio.Task[None] | None = None
 
     @property
@@ -45,7 +49,10 @@ class PeriodicJob(ABC):
         try:
             while True:
                 try:
-                    await self.run_once()
+                    async with asyncio.timeout(self._timeout):
+                        await self.run_once()
+                except TimeoutError:
+                    logger.error("%s iteration timed out after %ss", self.name, self._timeout)
                 except Exception:
                     logger.exception("%s iteration failed", self.name)
                 await asyncio.sleep(self._interval)

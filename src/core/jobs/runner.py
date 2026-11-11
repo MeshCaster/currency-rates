@@ -1,7 +1,7 @@
 import logging
 from collections.abc import Sequence
 
-from host.jobs.base import Job
+from core.jobs.base import Job
 
 logger = logging.getLogger(__name__)
 

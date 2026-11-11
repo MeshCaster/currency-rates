@@ -1,5 +1,5 @@
 from application.ports import RateRepository
-from common.models import Page
+from core.pagination import Page
 from domain.models import Rate
 
 class RateQueryService:

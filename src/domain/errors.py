@@ -7,3 +7,7 @@ class DomainError(BusinessRuleError):
 
 class UnsupportedSyncError(DomainError):
     pass
+
+
+class InvalidSyncConfigurationError(DomainError):
+    pass

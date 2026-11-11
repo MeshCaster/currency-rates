@@ -2,8 +2,10 @@ from fastapi import Depends, Request
 
 from application.ports import RateProvider, RateRepository
 from application import (HistoricalRateSyncService, RateQueryService,
-                         SyncConfigurationQueryService)
+                         SyncConfigurationAdminService, SyncConfigurationQueryService)
 from core.dependencies import DbSessionDep
+from host.providers import HistoryProviders
+from infrastructure.db.repositories.provider_repository import SqlProviderRepository
 from infrastructure.db.repositories.rate_repository import SqlRateRepository
 from infrastructure.db.repositories.sync_configuration_repository import (
     SqlSyncConfigurationRepository,
@@ -29,3 +31,9 @@ def get_historical_sync_service(repository: RateRepository = Depends(get_reposit
 
 def get_sync_configuration_query_service(session: DbSessionDep) -> SyncConfigurationQueryService:
     return SyncConfigurationQueryService(SqlSyncConfigurationRepository(session))
+
+
+def get_sync_configuration_admin_service(session: DbSessionDep) -> SyncConfigurationAdminService:
+    return SyncConfigurationAdminService(SqlProviderRepository(session),
+                                         SqlSyncConfigurationRepository(session),
+                                         HistoryProviders.KEYS)

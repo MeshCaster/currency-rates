@@ -54,9 +54,11 @@ class SqlRateRepository(SqlAlchemyRepository[Rate, RateKey, RateRow]):
         return await self._insert_ignore(rows)
 
     async def upsert_many(self, rates: Sequence[Rate]) -> int:
-        if not rates:
+        unique = {RateKey.of(r): r for r in rates}
+        if not unique:
             return 0
-        return await upsert(self._session, RateRow, [self.mapper.to_values(r) for r in rates],
+        return await upsert(self._session, RateRow,
+                            [self.mapper.to_values(r) for r in unique.values()],
                             conflict_columns=self.id_columns, update_columns=("value",))
 
     async def add_sync_result(self, accepted: Sequence[Rate], resolved: Rate | None) -> int:

@@ -1,19 +1,26 @@
-from datetime import datetime, timezone
 import json
+from datetime import UTC, date, datetime, timedelta, timezone
+from decimal import Decimal
+from typing import Any
 
 import httpx
 from pydantic import TypeAdapter
 
+from domain.enums import IntervalKind
 from domain.models import Rate
 from rates_provider_integration.models.binance import BinanceTicker
 from rates_provider_integration.errors import RateProviderError
+from rates_provider_integration.history import require_daily, utc_midnight
 from rates_provider_integration.http_clients import default_client
 
 _tickers_adapter = TypeAdapter(list[BinanceTicker])
+_klines_adapter = TypeAdapter(list[list[Any]])
+_MAX_KLINES = 1000
 
 class BinanceProvider:
     BASE_URL = "https://data-api.binance.vision/api/v3/"
     name = "binance"
+    chunk_days = _MAX_KLINES
 
     def __init__(self, client: httpx.AsyncClient | None = None, *,
                  base_url: str | None = None) -> None:
@@ -32,6 +39,19 @@ class BinanceProvider:
         symbols = json.dumps(list(by_symbol), separators=(",", ":"))
         content = await self._get("ticker/price", {"symbols": symbols})
         return [self._to_rate(t, *by_symbol[t.symbol]) for t in _tickers_adapter.validate_json(content)]
+
+    async def get_history(self, base: str, quote: str, start: date, end: date,
+                          interval: IntervalKind = IntervalKind.DAILY) -> list[Rate]:
+        require_daily(self.name, interval)
+        base, quote = base.upper(), quote.upper()
+        content = await self._get("klines", {
+            "symbol": f"{base}{quote}", "interval": "1d",
+            "startTime": str(_ms(utc_midnight(start))),
+            "endTime": str(_ms(utc_midnight(end + timedelta(days=1))) - 1),
+            "limit": str(_MAX_KLINES)})
+        return [Rate(base=base, quote=quote, value=Decimal(str(k[4])), source=self.name,
+                     as_of=utc_midnight(datetime.fromtimestamp(k[0] / 1000, UTC).date()))
+                for k in _klines_adapter.validate_json(content)]
 
     async def _get(self, path: str, params: dict[str, str]) -> bytes:
         try:
@@ -70,3 +90,7 @@ class BinanceProvider:
 
     async def __aexit__(self, *exc: object) -> None:
         await self.aclose()
+
+
+def _ms(moment: datetime) -> int:
+    return int(moment.timestamp() * 1000)

@@ -3,9 +3,9 @@ from decimal import Decimal
 from typing import Any
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
-from application import SyncConfigurationView
+from application import NewSyncConfiguration, SyncConfigurationView
 from domain.enums import IntervalKind, SyncState, SyncStatus
 
 
@@ -80,3 +80,26 @@ class SyncConfigurationPageOut(BaseModel):
     total: int
     page: int
     size: int
+
+
+class SyncConfigurationIn(BaseModel):
+    provider: str = Field(description="Provider key from the catalog, e.g. nbg")
+    base: str = Field(min_length=3, max_length=10)
+    quote: str = Field(min_length=3, max_length=10)
+    interval: IntervalKind = IntervalKind.DAILY
+    date_from: date
+    date_to: date | None = Field(default=None, description="None = keep syncing new days")
+    options: dict[str, Any] | None = Field(
+        default=None, description='Provider-specific, e.g. {"providers": "ECB"} for frankfurter')
+    is_active: bool = True
+
+    @field_validator("base", "quote")
+    @classmethod
+    def _upper(cls, code: str) -> str:
+        return code.strip().upper()
+
+    def to_command(self) -> NewSyncConfiguration:
+        return NewSyncConfiguration(
+            provider=self.provider.strip().lower(), base=self.base, quote=self.quote,
+            interval=self.interval, date_from=self.date_from, date_to=self.date_to,
+            options=self.options, is_active=self.is_active)

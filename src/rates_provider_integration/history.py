@@ -1,9 +1,18 @@
-from datetime import date, timedelta
+from datetime import UTC, date, datetime, time, timedelta
 from typing import Protocol
 
 from domain.enums import IntervalKind
 from domain.models import Rate
 from rates_provider_integration.errors import RateProviderError
+
+
+def utc_midnight(day: date) -> datetime:
+    return datetime.combine(day, time.min, tzinfo=UTC)
+
+
+def require_daily(provider: str, interval: IntervalKind) -> None:
+    if interval is not IntervalKind.DAILY:
+        raise RateProviderError(f"{provider} serves daily rates only; got {interval}")
 
 
 class DatedRateSource(Protocol):
@@ -21,8 +30,7 @@ class DailyHistory:
 
     async def get_history(self, base: str, quote: str, start: date, end: date,
                           interval: IntervalKind = IntervalKind.DAILY) -> list[Rate]:
-        if interval is not IntervalKind.DAILY:
-            raise RateProviderError(f"{self.name} serves daily rates only; got {interval}")
+        require_daily(self.name, interval)
         rates: list[Rate] = []
         day = start
         while day <= end:

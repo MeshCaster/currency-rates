@@ -1,4 +1,5 @@
 from decimal import Decimal
+from typing import Any
 
 from pydantic import BaseModel
 
@@ -30,3 +31,7 @@ class KrakenTicker(BaseModel):
 class KrakenTickerResponse(BaseModel):
     error: list[str]
     result: dict[str, KrakenTicker] = {}
+
+class KrakenOHLCResponse(BaseModel):
+    error: list[str]
+    result: dict[str, list[list[Any]] | int] = {}

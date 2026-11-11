@@ -10,7 +10,7 @@ from core.database.errors import ConcurrencyError, NotFoundError
 from core.database.repository import SqlAlchemyRepository
 from core.pagination import Page
 from core.database.types import utc_now
-from domain.enums import SyncStatus
+from domain.enums import IntervalKind, SyncStatus
 from domain.models import SyncConfig
 from infrastructure.db.models.provider import ProviderRow
 from infrastructure.db.models.sync_configuration import SyncConfigurationRow
@@ -51,6 +51,13 @@ class SqlSyncConfigurationRepository(
         row = await self._session.get(SyncConfigurationRow, entity.id)
         if row is not None:
             self._session.expunge(row)
+
+    async def exists_for(self, provider_id: UUID, base: str, quote: str,
+                         interval: IntervalKind) -> bool:
+        row = SyncConfigurationRow
+        found = await self._find(row.provider_id == provider_id, row.base == base.upper(),
+                                 row.quote == quote.upper(), row.interval == interval, limit=1)
+        return bool(found)
 
     async def search(self, *, provider: str | None = None, is_active: bool | None = None,
                      page: int = 1, size: int = 50) -> Page[SyncConfig]:

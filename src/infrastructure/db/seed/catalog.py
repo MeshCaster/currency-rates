@@ -57,8 +57,8 @@ PROVIDERS: tuple[ProviderSeed, ...] = (
         ),
         currencies=("BTC", "ETH", "USDT"),
         dev_sync=(
-            SyncSeed("BTC", "USDT", DAILY, days_back=365, is_active=False),
-            SyncSeed("ETH", "USDT", DAILY, days_back=365, is_active=False),
+            SyncSeed("BTC", "USDT", DAILY, days_back=365),
+            SyncSeed("ETH", "USDT", DAILY, days_back=365),
             SyncSeed("BTC", "USDT", MONTHLY, days_back=730, is_active=False),
         ),
     ),
@@ -88,7 +88,7 @@ PROVIDERS: tuple[ProviderSeed, ...] = (
         currencies=("BTC", "ETH", "USD", "EUR"),
         provider_codes={"BTC": "XBT"},
         dev_sync=(
-            SyncSeed("BTC", "USD", DAILY, days_back=365, is_active=False),
+            SyncSeed("BTC", "USD", DAILY, days_back=365),
             SyncSeed("BTC", "USD", MONTHLY, days_back=600, is_active=False),
         ),
     ),
@@ -101,7 +101,7 @@ PROVIDERS: tuple[ProviderSeed, ...] = (
         currencies=("BTC", "ETH", "USDT", "USD", "GEL"),
         provider_codes={"BTC": "bitcoin", "ETH": "ethereum", "USDT": "tether"},
         dev_sync=(
-            SyncSeed("BTC", "GEL", DAILY, days_back=300, is_active=False),
+            SyncSeed("BTC", "GEL", DAILY, days_back=300),
             SyncSeed("BTC", "USD", MONTHLY, days_back=300, is_active=False),
         ),
     ),

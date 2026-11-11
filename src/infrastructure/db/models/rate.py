@@ -4,10 +4,10 @@ from decimal import Decimal
 from sqlalchemy import Index, Numeric, String, DateTime, func, text
 from sqlalchemy.orm import Mapped, mapped_column
 
-from infrastructure.db.models.base import Base
+from core.database.audit import AuditedBase
 
 
-class RateRow(Base):
+class RateRow(AuditedBase):
 
     __tablename__ = "rates"
 

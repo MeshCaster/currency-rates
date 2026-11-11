@@ -1,4 +1,5 @@
 import os
+from functools import lru_cache
 
 from pydantic import Field, model_validator
 from pydantic_settings import SettingsConfigDict, BaseSettings
@@ -8,6 +9,7 @@ from core.configuration.database_config import DatabaseSettings
 from core.configuration.http_client_config import HttpClientSettings
 from core.configuration.log_config import LogSettings
 from core.configuration.otel_config import OtelSettings
+from core.configuration.rate_sync_config import RateSyncSettings
 from core.configuration.security_config import SecuritySettings, _INSECURE_DEFAULT_SECRET
 from core.constants import Environment, LogFormat
 
@@ -43,6 +45,7 @@ class Settings(BaseSettings):
     cors: CorsSettings = Field(default_factory=CorsSettings)
     http_client: HttpClientSettings = Field(default_factory=HttpClientSettings)
     otel: OtelSettings = Field(default_factory=OtelSettings)
+    rate_sync: RateSyncSettings = Field(default_factory=RateSyncSettings)
 
     @property
     def is_development(self) -> bool:
@@ -85,3 +88,8 @@ class Settings(BaseSettings):
         if problems:
             raise ValueError(f"Invalid configuration for '{self.app_env}': " + "; ".join(problems))
         return self
+
+
+@lru_cache
+def get_settings() -> Settings:
+    return Settings()

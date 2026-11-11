@@ -1,24 +1,18 @@
 from datetime import date
 
-from fastapi import APIRouter, Depends, HTTPException, Query
-from sqlalchemy.ext.asyncio import AsyncSession
+from fastapi import APIRouter, Depends, Query
 
 from application import RateQueryService, RateSyncService, HistoricalRateSyncService
+from core.exceptions.bad_request_error import BadRequestError
+from core.exceptions.not_found_error import NotFoundError
 from host.api.deps import (
     get_historical_sync_service,
     get_query_service,
-    get_session,
     get_sync_service,
 )
 from host.api.schemas import RateHistoryOut, RateOut, SyncResultOut
-from rates_provider_integration.errors import RateProviderError
 
-router = APIRouter()
-
-
-@router.get("/health")
-async def health():
-    return {"status": "ok"}
+router = APIRouter(tags=["rates"])
 
 
 @router.get("/pairs")
@@ -30,7 +24,7 @@ async def list_pairs(query: RateQueryService = Depends(get_query_service)):
 async def latest_rate(base: str, quote: str, query: RateQueryService = Depends(get_query_service)):
     rate = await query.latest(base, quote)
     if rate is None:
-        raise HTTPException(status_code=404, detail=f"No rate for {base.upper()}/{quote.upper()}")
+        raise NotFoundError(f"No rate for {base.upper()}/{quote.upper()}")
     return rate
 
 
@@ -43,24 +37,16 @@ async def history(base: str, quote: str, query: RateQueryService = Depends(get_q
 
 
 @router.post("/rates/{base}/{quote}/sync", response_model=RateOut)
-async def sync_now(base: str, quote: str, service: RateSyncService = Depends(get_sync_service),
-                   session: AsyncSession = Depends(get_session)):
-    try:
-        rate = await service.sync(base, quote)
-    except RateProviderError as e:
-        raise HTTPException(status_code=502, detail=str(e)) from e
-    await session.commit()
-    return rate
+async def sync_now(base: str, quote: str, service: RateSyncService = Depends(get_sync_service)):
+    return await service.sync(base, quote)
 
 
 @router.post("/rates/{base}/{quote}/backfill", response_model=SyncResultOut)
 async def backfill(base: str, quote: str, since: date, until: date,
-                   service: HistoricalRateSyncService = Depends(get_historical_sync_service),
-                   session: AsyncSession = Depends(get_session)):
+                   service: HistoricalRateSyncService = Depends(get_historical_sync_service)):
     if since > until:
-        raise HTTPException(status_code=422, detail="since must be on or before until")
+        raise BadRequestError("since must be on or before until")
     if (until - since).days > 366:
-        raise HTTPException(status_code=422, detail="range must span at most 366 days")
+        raise BadRequestError("range must span at most 366 days")
     result = await service.sync_range(base, quote, since, until)
-    await session.commit()
     return SyncResultOut.model_validate(result)

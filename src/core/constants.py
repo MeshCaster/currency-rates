@@ -14,3 +14,5 @@ class Environment(StrEnum):
 
 REQUEST_ID_HEADER: Final = "X-Request-ID"
 PROBLEM_JSON_MEDIA_TYPE: Final = "application/problem+json"
+
+HEALTH_PATHS: Final = frozenset({"/health/live", "/health/ready"})

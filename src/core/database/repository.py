@@ -1,27 +1,34 @@
-from typing import ClassVar, Any, Iterable, Sequence, Protocol
+from typing import Any, ClassVar, Iterable, Protocol, Sequence
 
 from sqlalchemy import select, update, delete, and_, tuple_, ColumnElement, func
 from sqlalchemy.ext.asyncio.session import AsyncSession
-from sqlalchemy.orm import DeclarativeBase
-
-from infrastructure.db.errors.not_found import NotFoundError
-from infrastructure.db.errors.duplicate import DuplicateError
-from infrastructure.db.errors.concurrency import ConcurrencyError
 
 from common.models import Page
+from core.database.errors import ConcurrencyError, DuplicateError, NotFoundError
+from core.database.mapper import Mapper
+from core.database.orm import Base
 
 
-class Mapper[TEntity, TRow](Protocol):
-    def to_domain(self, row: TRow) -> TEntity: ...
-    def to_values(self, entity: TEntity) -> dict[str, Any]: ...
+
+class Repository[TEntity, TId](Protocol):
+    async def get(self, id: TId) -> TEntity | None: ...
+    async def get_or_raise(self, id: TId) -> TEntity: ...
+    async def get_many(self, ids: Iterable[TId]) -> list[TEntity]: ...
+    async def paginate(self, page: int = 1, size: int = 50) -> Page[TEntity]: ...
+    async def exists(self, id: TId) -> bool: ...
+    async def count(self) -> int: ...
+    async def add(self, entity: TEntity) -> None: ...
+    async def update(self, entity: TEntity) -> None: ...
+    async def delete(self, id: TId) -> None: ...
 
 
-class SqlAlchemyRepository[TEntity, TId, TRow: DeclarativeBase]:
+class SqlAlchemyRepository[TEntity, TId, TRow: Base]:
 
-    row_type: ClassVar[type[DeclarativeBase]]
+    row_type: ClassVar[type[Base]]
     mapper: ClassVar[Mapper[Any, Any]]
     id_columns: ClassVar[tuple[str, ...]] = ("id",)
     version_column: ClassVar[str | None] = "version"
+    managed_columns: ClassVar[tuple[str, ...]] = ("created_at", "updated_at")
 
     def __init__(self, session: AsyncSession) -> None:
         self._session = session
@@ -54,7 +61,7 @@ class SqlAlchemyRepository[TEntity, TId, TRow: DeclarativeBase]:
         return await self._count()
 
     async def add(self, entity: TEntity) -> None:
-        values = self.mapper.to_values(entity)
+        values = self._values_of(entity)
         if self.version_column and self.version_column in values:
             values[self.version_column] = 1
         id = self._id_of(values)
@@ -65,7 +72,7 @@ class SqlAlchemyRepository[TEntity, TId, TRow: DeclarativeBase]:
         self._bump_version(entity)
 
     async def update(self, entity: TEntity) -> None:
-        values = self.mapper.to_values(entity)
+        values = self._values_of(entity)
         id = self._id_of(values)
         for column in self.id_columns:
             values.pop(column, None)
@@ -92,6 +99,12 @@ class SqlAlchemyRepository[TEntity, TId, TRow: DeclarativeBase]:
     @property
     def _id_cols(self) -> tuple[Any, ...]:
         return tuple(getattr(self.row_type, name) for name in self.id_columns)
+
+    def _values_of(self, entity: TEntity) -> dict[str, Any]:
+        values = self.mapper.to_values(entity)
+        for column in self.managed_columns:
+            values.pop(column, None)
+        return values
 
     @staticmethod
     def _as_tuple(id: Any) -> tuple[Any, ...]:

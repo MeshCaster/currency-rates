@@ -8,9 +8,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from common.models import Page
 from infrastructure.db.models.rate import RateRow
-from infrastructure.db.repositories.repository import SqlAlchemyRepository
 from domain.enums import OFFICIAL_KINDS, RateKind
 from domain.models import Rate
+from core.database.repository import SqlAlchemyRepository
 
 
 class RateKey(NamedTuple):

@@ -1,5 +1,5 @@
-from common.errors import AppError
+from core.exceptions.business_rule_error import BusinessRuleError
 
 
-class DomainError(AppError):
+class DomainError(BusinessRuleError):
     pass

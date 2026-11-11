@@ -1,5 +1,4 @@
 import asyncio
-import os
 from logging.config import fileConfig
 
 from sqlalchemy import pool
@@ -8,8 +7,10 @@ from sqlalchemy.ext.asyncio import create_async_engine
 
 from alembic import context
 
-from infrastructure.db.models.base import Base
-import infrastructure.db.models.rate  # noqa: F401
+from core.configuration.settings import get_settings
+from core.database.orm import Base
+from core.database.types import render_item
+import infrastructure.db.models  # noqa: F401
 
 config = context.config
 
@@ -20,7 +21,10 @@ target_metadata = Base.metadata
 
 
 def get_url() -> str:
-    return "postgresql+asyncpg://rates:rates@localhost:5433/rates"
+    url = get_settings().database.url
+    if url is None:
+        raise RuntimeError("DATABASE__URL is not configured (see .env.development)")
+    return url.get_secret_value()
 
 
 def run_migrations_offline() -> None:
@@ -30,6 +34,7 @@ def run_migrations_offline() -> None:
         literal_binds=True,
         dialect_opts={"paramstyle": "named"},
         compare_type=True,
+        render_item=render_item,
     )
 
     with context.begin_transaction():
@@ -37,7 +42,8 @@ def run_migrations_offline() -> None:
 
 
 def do_run_migrations(connection: Connection) -> None:
-    context.configure(connection=connection, target_metadata=target_metadata, compare_type=True)
+    context.configure(connection=connection, target_metadata=target_metadata, compare_type=True,
+                      render_item=render_item)
 
     with context.begin_transaction():
         context.run_migrations()

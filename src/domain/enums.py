@@ -10,5 +10,18 @@ class IntervalKind(StrEnum):
     DAILY = "daily"
     MONTHLY = "monthly"
 
+class CurrencyKind(StrEnum):
+    FIAT = "fiat"
+    CRYPTO = "crypto"
+    STABLECOIN = "stablecoin"
+
+class ProviderKind(StrEnum):
+    FX = "fx"
+    CRYPTO = "crypto"
+
+class SyncStatus(StrEnum):
+    SUCCEEDED = "succeeded"
+    FAILED = "failed"
+
 OFFICIAL_KINDS = (RateKind.RESOLVED, RateKind.CROSS)
 OFFICIAL_INTERVAL_KINDS = (IntervalKind.DAILY, IntervalKind.MONTHLY)

@@ -1,5 +1,9 @@
 from application.ports import (HistoricalRateProvider, ProviderCatalog, RateHistoryProvider,
                                RateProvider, RateRepository, SyncConfigurationRepository)
+from application.services.alerts.alert_rule_service import AlertRuleService
+from application.services.alerts.alert_service import AlertService
+from application.services.alerts.models import AlertRuleChanges, AlertTickResult, NewAlertRule
+from application.services.alerts.price_alert_service import PriceAlertService
 from application.services.rate.models import (ConfigSyncResult, NewSyncConfiguration,
                                              SyncConfigurationView, SyncFailure, SyncResult)
 
@@ -17,4 +21,6 @@ __all__ = ["RateProvider", "HistoricalRateProvider", "RateRepository",
            "HistoricalRateSyncService", "RateQueryService", "SyncResult", "SyncFailure",
            "RateHistoryProvider", "SyncConfigurationRepository", "SyncConfigurationService",
            "ConfigSyncResult", "SyncConfigurationQueryService", "SyncConfigurationView",
-           "SyncConfigurationAdminService", "NewSyncConfiguration", "ProviderCatalog"]
+           "SyncConfigurationAdminService", "NewSyncConfiguration", "ProviderCatalog",
+           "AlertRuleService", "AlertService", "PriceAlertService", "NewAlertRule",
+           "AlertRuleChanges", "AlertTickResult"]

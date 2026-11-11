@@ -31,5 +31,24 @@ class SyncState(StrEnum):
     COMPLETED = "completed"
     FAILED = "failed"
 
+class AlertSeverity(StrEnum):
+    INFO = "info"
+    WARNING = "warning"
+    CRITICAL = "critical"
+
+    @property
+    def rank(self) -> int:
+        return list(AlertSeverity).index(self)
+
+class AlertStatus(StrEnum):
+    OPEN = "open"
+    ACKNOWLEDGED = "acknowledged"
+    RESOLVED = "resolved"
+
+class PriceDirection(StrEnum):
+    UP = "up"
+    DOWN = "down"
+    BOTH = "both"
+
 OFFICIAL_KINDS = (RateKind.RESOLVED, RateKind.CROSS)
 OFFICIAL_INTERVAL_KINDS = (IntervalKind.DAILY, IntervalKind.MONTHLY)

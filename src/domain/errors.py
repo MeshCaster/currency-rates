@@ -11,3 +11,11 @@ class UnsupportedSyncError(DomainError):
 
 class InvalidSyncConfigurationError(DomainError):
     pass
+
+
+class InvalidAlertRuleError(DomainError):
+    pass
+
+
+class AlertStateError(DomainError):
+    pass

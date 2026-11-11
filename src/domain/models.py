@@ -4,7 +4,7 @@ from decimal import Decimal
 from typing import Any
 from uuid import UUID
 
-from domain.enums import IntervalKind, ProviderKind, SyncStatus
+from domain.enums import IntervalKind, ProviderKind, SyncState, SyncStatus
 
 @dataclass(frozen=True, slots=True)
 class Rate:
@@ -43,6 +43,23 @@ class ProviderCapability:
     def interval(self, interval: IntervalKind) -> IntervalCapability | None:
         return next((c for c in self.intervals if c.interval is interval), None)
 
+@dataclass(frozen=True, slots=True)
+class SyncProgress:
+    days_total: int
+    days_synced: int
+    state: SyncState
+
+    @property
+    def days_remaining(self) -> int:
+        return self.days_total - self.days_synced
+
+    @property
+    def percent(self) -> float:
+        if self.days_total == 0:
+            return 0.0 if self.state is SyncState.PENDING else 100.0
+        return round(100 * self.days_synced / self.days_total, 1)
+
+
 @dataclass(slots=True)
 class SyncConfig:
 
@@ -69,3 +86,23 @@ class SyncConfig:
     def is_finished(self) -> bool:
         return self.date_to is not None and self.synced_until is not None \
             and self.synced_until >= self.date_to
+
+    def progress(self, today: date) -> SyncProgress:
+        end = today - timedelta(days=1)
+        if self.date_to is not None:
+            end = min(end, self.date_to)
+        total = max((end - self.date_from).days + 1, 0)
+        synced = 0 if self.synced_until is None else \
+            min(max((self.synced_until - self.date_from).days + 1, 0), total)
+        return SyncProgress(total, synced, self._state(synced >= total))
+
+    def _state(self, caught_up: bool) -> SyncState:
+        if not self.is_active:
+            return SyncState.PAUSED
+        if self.last_status is SyncStatus.FAILED:
+            return SyncState.FAILED
+        if self.is_finished():
+            return SyncState.COMPLETED
+        if self.last_run_at is None:
+            return SyncState.PENDING
+        return SyncState.LIVE if caught_up else SyncState.BACKFILLING

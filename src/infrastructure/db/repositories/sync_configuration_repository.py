@@ -8,6 +8,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.database.errors import ConcurrencyError, NotFoundError
 from core.database.repository import SqlAlchemyRepository
+from core.pagination import Page
 from core.database.types import utc_now
 from domain.enums import SyncStatus
 from domain.models import SyncConfig
@@ -50,6 +51,17 @@ class SqlSyncConfigurationRepository(
         row = await self._session.get(SyncConfigurationRow, entity.id)
         if row is not None:
             self._session.expunge(row)
+
+    async def search(self, *, provider: str | None = None, is_active: bool | None = None,
+                     page: int = 1, size: int = 50) -> Page[SyncConfig]:
+        row = SyncConfigurationRow
+        criteria = []
+        if provider is not None:
+            criteria.append(row.provider.has(ProviderRow.key == provider))
+        if is_active is not None:
+            criteria.append(row.is_active.is_(is_active))
+        return await self._page(*criteria, page=page, size=size,
+                                order_by=[row.base, row.quote, row.interval, row.id])
 
     async def list_due(self, as_of: date) -> list[SyncConfig]:
         row = SyncConfigurationRow

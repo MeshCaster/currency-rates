@@ -23,5 +23,13 @@ class SyncStatus(StrEnum):
     SUCCEEDED = "succeeded"
     FAILED = "failed"
 
+class SyncState(StrEnum):
+    PAUSED = "paused"
+    PENDING = "pending"
+    BACKFILLING = "backfilling"
+    LIVE = "live"
+    COMPLETED = "completed"
+    FAILED = "failed"
+
 OFFICIAL_KINDS = (RateKind.RESOLVED, RateKind.CROSS)
 OFFICIAL_INTERVAL_KINDS = (IntervalKind.DAILY, IntervalKind.MONTHLY)

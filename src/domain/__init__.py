@@ -4,10 +4,17 @@ from domain.enums import (
     IntervalKind,
     ProviderKind,
     RateKind,
+    SyncState,
     SyncStatus,
 )
 from domain.errors import DomainError
-from domain.models import IntervalCapability, ProviderCapability, Rate, SyncConfig
+from domain.models import (
+    IntervalCapability,
+    ProviderCapability,
+    Rate,
+    SyncConfig,
+    SyncProgress,
+)
 
 __all__ = [
     "OFFICIAL_KINDS",
@@ -20,5 +27,7 @@ __all__ = [
     "Rate",
     "RateKind",
     "SyncConfig",
+    "SyncProgress",
+    "SyncState",
     "SyncStatus",
 ]

@@ -2,7 +2,7 @@ from dataclasses import dataclass
 from datetime import date
 from uuid import UUID
 
-from domain import Rate
+from domain import Rate, SyncConfig, SyncProgress
 
 
 @dataclass(frozen=True, slots=True)
@@ -34,3 +34,9 @@ class ConfigSyncResult:
     fetched: int
     stored: int
     provisional: bool = False
+
+
+@dataclass(frozen=True, slots=True)
+class SyncConfigurationView:
+    config: SyncConfig
+    progress: SyncProgress

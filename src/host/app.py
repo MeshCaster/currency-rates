@@ -13,6 +13,7 @@ from core.logging import configure_logging
 from core.middleware.setup import setup_middleware
 from host.api.health import router as health_router
 from host.api.routes import router
+from host.api.sync_configurations import router as sync_configurations_router
 from host.providers import default_provider
 
 logger = logging.getLogger(__name__)
@@ -45,4 +46,5 @@ def create_app(settings: Settings | None = None, *,
     register_exception_handlers(app)
     app.include_router(health_router)
     app.include_router(router, prefix=settings.api_prefix)
+    app.include_router(sync_configurations_router, prefix=settings.api_prefix)
     return app

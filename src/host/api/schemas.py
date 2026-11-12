@@ -7,6 +7,7 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from application import (
     AlertRuleChanges,
+    FeedView,
     NewAlertRule,
     NewSubscription,
     NewSyncConfiguration,
@@ -261,6 +262,28 @@ class FeedOut(BaseModel):
     @classmethod
     def of(cls, config: SyncConfig) -> FeedOut:
         return cls(id=config.id, provider=config.provider, base=config.base, quote=config.quote)
+
+
+class FeedRateOut(FeedOut):
+    value: Decimal | None
+    as_of: datetime | None
+    previous_value: Decimal | None
+    change_percent: Decimal | None
+
+    @classmethod
+    def of_view(cls, view: FeedView) -> FeedRateOut:
+        c, latest, previous = view.config, view.latest, view.previous
+        return cls(id=c.id, provider=c.provider, base=c.base, quote=c.quote,
+                   value=latest.value if latest else None,
+                   as_of=latest.as_of if latest else None,
+                   previous_value=previous.value if previous else None,
+                   change_percent=round(view.change_percent, 4)
+                   if view.change_percent is not None else None)
+
+
+class FeedPointOut(BaseModel):
+    day: date
+    value: Decimal
 
 
 class SubscriptionIn(BaseModel):

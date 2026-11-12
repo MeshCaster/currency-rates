@@ -3,7 +3,7 @@ from __future__ import annotations
 from datetime import datetime, timezone
 from typing import Sequence, NamedTuple, Any
 
-from sqlalchemy import select, func
+from sqlalchemy import func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from infrastructure.db.models.rate import RateRow
@@ -125,6 +125,16 @@ class SqlRateRepository(SqlAlchemyRepository[Rate, RateKey, RateRow]):
             criteria.append(RateRow.kind.in_(OFFICIAL_KINDS))
         return await self._page(*criteria, page=page, size=size,
                                 order_by=[RateRow.observed_at.desc(), RateRow.source])
+
+    async def provider_series(self, base: str, quote: str, provider: str,
+                              since: datetime | None = None, limit: int | None = None,
+                              newest_first: bool = False) -> list[Rate]:
+        criteria = [*self._pair(base, quote),
+                    or_(RateRow.source == provider, RateRow.source.like(f"{provider}:%"))]
+        if since is not None:
+            criteria.append(RateRow.observed_at >= since)
+        order = RateRow.observed_at.desc() if newest_first else RateRow.observed_at
+        return await self._find(*criteria, order_by=[order], limit=limit)
 
     @staticmethod
     def _pair(base: str, quote: str) -> tuple[Any, Any]:

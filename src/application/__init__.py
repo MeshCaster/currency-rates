@@ -11,6 +11,7 @@ from application.services.users.models import (IssuedToken, NewSubscription, Sig
 from application.services.users.subscription_service import SubscriptionService
 from application.services.notifications.digest import (ComposedEmail, Digest, FeedQuote,
                                                       compose_digest, plan_digests)
+from application.services.rate.feed_query_service import FeedQueryService, FeedView
 from application.services.rate.models import (ConfigSyncResult, NewSyncConfiguration,
                                              SyncConfigurationView, SyncFailure, SyncResult)
 
@@ -33,4 +34,5 @@ __all__ = ["RateProvider", "HistoricalRateProvider", "RateRepository",
            "AlertRuleChanges", "AlertTickResult", "AuthService", "AdminSeedOutcome",
            "TokenIssuer", "IssuedToken", "SignedIn", "NewSubscription", "SubscriptionChanges",
            "SubscriptionService", "UserRepository", "SubscriptionRepository", "EmailSender",
-           "ComposedEmail", "Digest", "FeedQuote", "compose_digest", "plan_digests"]
+           "ComposedEmail", "Digest", "FeedQuote", "compose_digest", "plan_digests",
+           "FeedQueryService", "FeedView"]

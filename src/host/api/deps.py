@@ -4,7 +4,8 @@ from uuid import UUID
 from fastapi import Depends, Request
 
 from application.ports import RateProvider, RateRepository
-from application import (AlertRuleService, AlertService, AuthService, HistoricalRateSyncService,
+from application import (AlertRuleService, AlertService, AuthService, FeedQueryService,
+                         HistoricalRateSyncService,
                          IssuedToken, RateQueryService, SubscriptionService,
                          SyncConfigurationAdminService, SyncConfigurationQueryService)
 from core.dependencies import CurrentPrincipalDep, DbSessionDep, SettingsDep
@@ -92,3 +93,7 @@ CurrentUserDep = Annotated[User, Depends(get_current_user)]
 def get_subscription_service(session: DbSessionDep) -> SubscriptionService:
     return SubscriptionService(SqlSubscriptionRepository(session),
                                SqlSyncConfigurationRepository(session))
+
+
+def get_feed_query_service(session: DbSessionDep) -> FeedQueryService:
+    return FeedQueryService(SqlSyncConfigurationRepository(session), SqlRateRepository(session))

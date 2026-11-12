@@ -3,14 +3,21 @@ from uuid import UUID
 
 from fastapi import APIRouter, Depends, Query, status
 
-from application import SubscriptionService, SyncConfigurationQueryService
+from application import FeedQueryService, SubscriptionService
 from core.dependencies import require_scopes
+from core.exceptions.not_found_error import NotFoundError
 from host.api.deps import (
     CurrentUserDep,
+    get_feed_query_service,
     get_subscription_service,
-    get_sync_configuration_query_service,
 )
-from host.api.schemas import FeedOut, SubscriptionIn, SubscriptionOut, SubscriptionPatch
+from host.api.schemas import (
+    FeedPointOut,
+    FeedRateOut,
+    SubscriptionIn,
+    SubscriptionOut,
+    SubscriptionPatch,
+)
 
 router = APIRouter()
 
@@ -19,14 +26,29 @@ can_read = [Depends(require_scopes("subscriptions:read"))]
 can_write = [Depends(require_scopes("subscriptions:write"))]
 
 
-@router.get("/feeds", response_model=list[FeedOut], tags=["feeds"])
-async def list_feeds(
-        query: Annotated[SyncConfigurationQueryService,
-                         Depends(get_sync_configuration_query_service)],
-        page: Annotated[int, Query(ge=1)] = 1,
-        size: Annotated[int, Query(ge=1, le=200)] = 200) -> list[FeedOut]:
-    found = await query.list(is_active=True, page=page, size=size)
-    return [FeedOut.of(v.config) for v in found.items]
+FeedsDep = Annotated[FeedQueryService, Depends(get_feed_query_service)]
+
+
+@router.get("/feeds", response_model=list[FeedRateOut], tags=["feeds"])
+async def list_feeds(feeds: FeedsDep) -> list[FeedRateOut]:
+    return [FeedRateOut.of_view(v) for v in await feeds.all()]
+
+
+@router.get("/feeds/{id}", response_model=FeedRateOut, tags=["feeds"])
+async def get_feed(id: UUID, feeds: FeedsDep) -> FeedRateOut:
+    view = await feeds.get(id)
+    if view is None:
+        raise NotFoundError(f"No feed {id}")
+    return FeedRateOut.of_view(view)
+
+
+@router.get("/feeds/{id}/history", response_model=list[FeedPointOut], tags=["feeds"])
+async def feed_history(id: UUID, feeds: FeedsDep,
+                       days: Annotated[int, Query(ge=1, le=730)] = 30) -> list[FeedPointOut]:
+    rates = await feeds.history(id, days)
+    if rates is None:
+        raise NotFoundError(f"No feed {id}")
+    return [FeedPointOut(day=r.as_of.date(), value=r.value) for r in rates]
 
 
 @router.get("/me/subscriptions", response_model=list[SubscriptionOut],

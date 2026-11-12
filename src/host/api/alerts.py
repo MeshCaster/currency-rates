@@ -4,10 +4,10 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, Query, Request, Response, status
 
 from application import AlertRuleService, AlertService
-from core.dependencies import CurrentPrincipalDep, require_scopes
+from core.dependencies import require_scopes
 from core.exceptions.not_found_error import NotFoundError
 from domain.enums import AlertSeverity, AlertStatus
-from host.api.deps import get_alert_rule_service, get_alert_service
+from host.api.deps import CurrentUserDep, get_alert_rule_service, get_alert_service
 from host.api.schemas import (
     AlertOut,
     AlertPageOut,
@@ -84,6 +84,5 @@ async def get_alert(id: UUID, alerts: AlertsDep) -> AlertOut:
 
 
 @alerts_router.post("/{id}/acknowledge", response_model=AlertOut, dependencies=can_write)
-async def acknowledge_alert(id: UUID, alerts: AlertsDep,
-                            principal: CurrentPrincipalDep) -> AlertOut:
-    return AlertOut.of(await alerts.acknowledge(id, by=principal.sub))
+async def acknowledge_alert(id: UUID, alerts: AlertsDep, admin: CurrentUserDep) -> AlertOut:
+    return AlertOut.of(await alerts.acknowledge(id, by=admin.email))

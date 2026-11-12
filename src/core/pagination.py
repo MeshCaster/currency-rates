@@ -7,11 +7,3 @@ class Page[T]:
     total: int
     page: int
     size: int
-
-    @property
-    def pages(self) -> int:
-        return max(1, -(-self.total // self.size))
-
-    @property
-    def has_next(self) -> bool:
-        return self.page < self.pages

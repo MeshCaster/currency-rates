@@ -3,7 +3,7 @@ from typing import Any
 
 import httpx
 
-from application.ports import EmailSender, RateHistoryProvider, RateProvider
+from application.ports import EmailSender, RateHistoryProvider
 from core.configuration.smtp_config import SmtpSettings
 from domain.errors import UnsupportedSyncError
 from rates_provider_integration.crypto.binance import BinanceProvider
@@ -14,10 +14,6 @@ from rates_provider_integration.fx.frankfurter import FrankfurterProvider
 from rates_provider_integration.fx.nbg import NBGProvider
 from rates_provider_integration.history import DailyHistory
 from smtp_integration import SmtpMailer
-
-
-def default_provider(http_client: httpx.AsyncClient) -> RateProvider:
-    return NBGProvider(http_client)
 
 
 def smtp_mailer(settings: SmtpSettings) -> EmailSender | None:

@@ -53,6 +53,3 @@ class PriceDirection(StrEnum):
 class UserRole(StrEnum):
     USER = "user"
     ADMIN = "admin"
-
-OFFICIAL_KINDS = (RateKind.RESOLVED, RateKind.CROSS)
-OFFICIAL_INTERVAL_KINDS = (IntervalKind.DAILY, IntervalKind.MONTHLY)

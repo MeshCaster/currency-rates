@@ -1,7 +1,8 @@
 from datetime import date
 
 from domain.enums import CurrencyKind, IntervalKind, ProviderKind
-from infrastructure.db.seed.models import CurrencySeed, IntervalSeed, ProviderSeed, SyncSeed
+from domain.models import IntervalCapability
+from infrastructure.db.seed.models import CurrencySeed, ProviderSeed, SyncSeed
 
 DAILY, MONTHLY = IntervalKind.DAILY, IntervalKind.MONTHLY
 
@@ -19,8 +20,8 @@ PROVIDERS: tuple[ProviderSeed, ...] = (
     ProviderSeed(
         "frankfurter", "Frankfurter", ProviderKind.FX,
         intervals=(
-            IntervalSeed(DAILY, is_native=True, history_start=date(1999, 1, 4)),
-            IntervalSeed(MONTHLY, is_native=True, history_start=date(1999, 1, 4)),
+            IntervalCapability(DAILY, is_native=True, history_start=date(1999, 1, 4)),
+            IntervalCapability(MONTHLY, is_native=True, history_start=date(1999, 1, 4)),
         ),
         currencies=("USD", "EUR", "GBP", "GEL"),
         dev_sync=(
@@ -33,9 +34,9 @@ PROVIDERS: tuple[ProviderSeed, ...] = (
     ProviderSeed(
         "nbg", "National Bank of Georgia", ProviderKind.FX,
         intervals=(
-            IntervalSeed(DAILY, is_native=True, history_start=date(1996, 1, 6),
+            IntervalCapability(DAILY, is_native=True, history_start=date(1996, 1, 6),
                          max_points_per_request=1),
-            IntervalSeed(MONTHLY, is_native=False, history_start=date(1996, 1, 6),
+            IntervalCapability(MONTHLY, is_native=False, history_start=date(1996, 1, 6),
                          max_points_per_request=1),
         ),
         currencies=("USD", "EUR", "GBP", "GEL"),
@@ -52,8 +53,8 @@ PROVIDERS: tuple[ProviderSeed, ...] = (
     ProviderSeed(
         "binance", "Binance", ProviderKind.CRYPTO,
         intervals=(
-            IntervalSeed(DAILY, is_native=True, max_points_per_request=1000),
-            IntervalSeed(MONTHLY, is_native=True, max_points_per_request=1000),
+            IntervalCapability(DAILY, is_native=True, max_points_per_request=1000),
+            IntervalCapability(MONTHLY, is_native=True, max_points_per_request=1000),
         ),
         currencies=("BTC", "ETH", "USDT"),
         dev_sync=(
@@ -65,9 +66,9 @@ PROVIDERS: tuple[ProviderSeed, ...] = (
     ProviderSeed(
         "coinbase", "Coinbase", ProviderKind.CRYPTO,
         intervals=(
-            IntervalSeed(DAILY, is_native=True, history_start=date(2023, 10, 1),
+            IntervalCapability(DAILY, is_native=True, history_start=date(2023, 10, 1),
                          max_points_per_request=1),
-            IntervalSeed(MONTHLY, is_native=False, history_start=date(2023, 10, 1),
+            IntervalCapability(MONTHLY, is_native=False, history_start=date(2023, 10, 1),
                          max_points_per_request=1),
         ),
         currencies=("BTC", "ETH", "USD", "EUR"),
@@ -80,9 +81,9 @@ PROVIDERS: tuple[ProviderSeed, ...] = (
     ProviderSeed(
         "kraken", "Kraken", ProviderKind.CRYPTO,
         intervals=(
-            IntervalSeed(DAILY, is_native=True, history_window_days=720,
+            IntervalCapability(DAILY, is_native=True, history_window_days=720,
                          max_points_per_request=720),
-            IntervalSeed(MONTHLY, is_native=False, history_window_days=720,
+            IntervalCapability(MONTHLY, is_native=False, history_window_days=720,
                          max_points_per_request=720),
         ),
         currencies=("BTC", "ETH", "USD", "EUR"),
@@ -95,8 +96,8 @@ PROVIDERS: tuple[ProviderSeed, ...] = (
     ProviderSeed(
         "coingecko", "CoinGecko", ProviderKind.CRYPTO,
         intervals=(
-            IntervalSeed(DAILY, is_native=True, history_window_days=365),
-            IntervalSeed(MONTHLY, is_native=False, history_window_days=365),
+            IntervalCapability(DAILY, is_native=True, history_window_days=365),
+            IntervalCapability(MONTHLY, is_native=False, history_window_days=365),
         ),
         currencies=("BTC", "ETH", "USDT", "USD", "GEL"),
         provider_codes={"BTC": "bitcoin", "ETH": "ethereum", "USDT": "tether"},

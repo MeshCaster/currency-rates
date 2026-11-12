@@ -1,6 +1,5 @@
 from domain.alerts import Alert, AlertChange, AlertRule, AlertTier, PriceMove, PriceSample
 from domain.enums import (
-    OFFICIAL_KINDS,
     AlertSeverity,
     AlertStatus,
     CurrencyKind,
@@ -23,7 +22,6 @@ from domain.models import (
 )
 
 __all__ = [
-    "OFFICIAL_KINDS",
     "Alert",
     "AlertChange",
     "AlertRule",

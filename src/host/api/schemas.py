@@ -25,38 +25,7 @@ from domain.enums import (
     SyncStatus,
     UserRole,
 )
-from domain.models import SyncConfig
 from domain.users import Subscription, User
-
-
-class RateOut(BaseModel):
-    model_config = ConfigDict(from_attributes=True)
-    base: str
-    quote: str
-    value: Decimal
-    source: str
-    as_of: datetime
-
-
-class RateHistoryOut(BaseModel):
-    items: list[RateOut]
-    total: int
-    page: int
-    size: int
-
-
-class SyncFailureOut(BaseModel):
-    model_config = ConfigDict(from_attributes=True)
-    base: str
-    quote: str
-    error: str
-
-
-class SyncResultOut(BaseModel):
-    model_config = ConfigDict(from_attributes=True)
-    fetched: int
-    stored: int
-    failures: list[SyncFailureOut]
 
 
 class SyncProgressOut(BaseModel):
@@ -258,10 +227,6 @@ class FeedOut(BaseModel):
     provider: str
     base: str
     quote: str
-
-    @classmethod
-    def of(cls, config: SyncConfig) -> FeedOut:
-        return cls(id=config.id, provider=config.provider, base=config.base, quote=config.quote)
 
 
 class FeedRateOut(FeedOut):

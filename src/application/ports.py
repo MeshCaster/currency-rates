@@ -10,19 +10,6 @@ from domain.models import ProviderCapability, Rate, SyncConfig
 from domain.users import Subscription, User
 
 
-class RateProvider(Protocol):
-
-    name: str
-
-    async def get_rate(self, base: str, quote: str) -> Rate: ...
-
-
-class HistoricalRateProvider(Protocol):
-    name: str
-
-    async def get_rate(self, base: str, quote: str, on: date) -> Rate: ...
-
-
 class RateHistoryProvider(Protocol):
     name: str
     chunk_days: int
@@ -32,13 +19,8 @@ class RateHistoryProvider(Protocol):
 
 
 class RateRepository(Protocol):
-    async def add_many(self, rates: Sequence[Rate]) -> int: ...
     async def upsert_many(self, rates: Sequence[Rate]) -> int: ...
-    async def latest(self, base: str, quote: str, source: str | None = None) -> Rate | None: ...
-    async def history(self, base: str, quote: str, page: int = 1, size: int = 50,
-                      official_only: bool = True) -> Page[Rate]: ...
-    async def list_pairs(self, include_cross: bool = False) -> list[tuple[str, str]]: ...
-    async def provider_series(self, base: str, quote: str, provider: str,
+    async def provider_series(self, base: str, quote: str, provider: str, *,
                               since: datetime | None = None, limit: int | None = None,
                               newest_first: bool = False) -> list[Rate]: ...
 

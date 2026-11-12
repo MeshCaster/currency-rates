@@ -1,3 +1,5 @@
+name: currencyrates
+
 services:
   db:
     image: timescale/timescaledb:latest-pg17

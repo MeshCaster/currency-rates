@@ -38,6 +38,7 @@ coverage.xml
 cover/
 
 .env
+.env.local
 .venv
 env/
 venv/

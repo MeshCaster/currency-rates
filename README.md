@@ -113,6 +113,9 @@ List endpoints take `?page=` and `?size=` and return `{items, total, page, size}
 
 ## Configuration
 
+`.env.development` works as-is with Docker Compose; `.env.production` lists every value to
+provide as a `[ ]` item. Personal values go in `.env.local`, which is git-ignored.
+
 | Variable | Default | Meaning |
 |---|---|---|
 | `APP_ENV` | `development` | `development`, `staging` or `production` |

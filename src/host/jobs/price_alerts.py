@@ -3,12 +3,13 @@ import logging
 from datetime import timedelta
 from decimal import Decimal
 
+from sqlalchemy.ext.asyncio import AsyncSession
+
 from application import PriceAlertService
 from core.clock import utc_now, utc_today
 from core.configuration.alert_config import AlertSettings
 from core.database.session import Database
-from core.jobs.base import PeriodicJob
-from core.jobs.locking import try_advisory_xact_lock
+from core.jobs.exclusive import ExclusiveJob
 from domain.alerts import PriceSample
 from domain.enums import IntervalKind
 from domain.models import SyncConfig
@@ -25,36 +26,32 @@ from infrastructure.db.repositories.sync_configuration_repository import (
 logger = logging.getLogger(__name__)
 
 
-class PriceAlertJob(PeriodicJob):
+class PriceAlertJob(ExclusiveJob):
 
     def __init__(self, db: Database, providers: HistoryProviderFactory,
                  settings: AlertSettings) -> None:
-        super().__init__(settings.interval_seconds, settings.timeout_seconds)
-        self._db = db
+        super().__init__(db, settings.interval_seconds, settings.timeout_seconds)
         self._providers = providers
         self._settings = settings
         self._slots = asyncio.Semaphore(settings.max_concurrency)
 
-    async def run_once(self) -> None:
+    async def run_exclusive(self, session: AsyncSession) -> None:
         now = utc_now()
         tick = timedelta(seconds=self._settings.interval_seconds)
-        async with self._db.transaction() as session:
-            if not await try_advisory_xact_lock(session, self.name):
-                return
-            samples = SqlPriceSampleRepository(session)
-            pruned = await samples.prune(now - timedelta(days=self._settings.sample_retention_days))
-            rules = await SqlAlertRuleRepository(session).list_active()
-            if not rules:
-                return
-            configs = await SqlSyncConfigurationRepository(session).get_many(
-                {r.sync_configuration_id for r in rules})
-            prices = await asyncio.gather(*(self._price(c) for c in configs))
-            await samples.add_many([PriceSample(c.id, now, value)
-                                    for c, value in zip(configs, prices, strict=True)
-                                    if value is not None])
-            service = PriceAlertService(SqlAlertRepository(session), samples,
-                                        stale_after=2 * tick, slack=2 * tick)
-            result = await service.evaluate(rules, now)
+        samples = SqlPriceSampleRepository(session)
+        pruned = await samples.prune(now - timedelta(days=self._settings.sample_retention_days))
+        rules = await SqlAlertRuleRepository(session).list_active()
+        if not rules:
+            return
+        configs = await SqlSyncConfigurationRepository(session).get_many(
+            {r.sync_configuration_id for r in rules})
+        prices = await asyncio.gather(*(self._price(c) for c in configs))
+        await samples.add_many([PriceSample(c.id, now, value)
+                                for c, value in zip(configs, prices, strict=True)
+                                if value is not None])
+        service = PriceAlertService(SqlAlertRepository(session), samples,
+                                    stale_after=2 * tick, slack=2 * tick)
+        result = await service.evaluate(rules, now)
 
         level = logging.INFO if result.opened or result.escalated or result.resolved \
             else logging.DEBUG

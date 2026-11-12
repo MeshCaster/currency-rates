@@ -42,12 +42,6 @@ class SqlAlertRuleRepository(SqlAlchemyRepository[AlertRule, UUID, AlertRuleRow]
     def __init__(self, session: AsyncSession) -> None:
         super().__init__(session)
 
-    async def add(self, entity: AlertRule) -> None:
-        await super().add(entity)
-        row = await self._session.get(AlertRuleRow, entity.id)
-        if row is not None:
-            self._session.expunge(row)
-
     async def list_active(self) -> list[AlertRule]:
         return await self._find(AlertRuleRow.is_active.is_(True),
                                 order_by=[AlertRuleRow.sync_configuration_id, AlertRuleRow.id])

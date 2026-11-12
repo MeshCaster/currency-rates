@@ -106,8 +106,10 @@ class SqlAlchemyRepository[TEntity, TId, TRow: Base]:
         id = self._id_of(values)
         if await self.exists(id):
             raise DuplicateError.for_(self.row_type.__name__, id)
-        self._session.add(self.row_type(**values))
+        row = self.row_type(**values)
+        self._session.add(row)
         await self._session.flush()
+        self._session.expunge(row)
         self._bump_version(entity)
 
     async def update(self, entity: TEntity) -> None:

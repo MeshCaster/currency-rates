@@ -48,12 +48,6 @@ class SqlSubscriptionRepository(SqlAlchemyRepository[Subscription, UUID, Subscri
     def __init__(self, session: AsyncSession) -> None:
         super().__init__(session)
 
-    async def add(self, entity: Subscription) -> None:
-        await super().add(entity)
-        row = await self._session.get(SubscriptionRow, entity.id)
-        if row is not None:
-            self._session.expunge(row)
-
     async def list_for_user(self, user_id: UUID) -> list[Subscription]:
         return await self._find(SubscriptionRow.user_id == user_id,
                                 order_by=[SubscriptionRow.created_at, SubscriptionRow.id])

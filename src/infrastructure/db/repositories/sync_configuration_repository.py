@@ -46,12 +46,6 @@ class SqlSyncConfigurationRepository(
     def __init__(self, session: AsyncSession) -> None:
         super().__init__(session)
 
-    async def add(self, entity: SyncConfig) -> None:
-        await super().add(entity)
-        row = await self._session.get(SyncConfigurationRow, entity.id)
-        if row is not None:
-            self._session.expunge(row)
-
     async def exists_for(self, provider_id: UUID, base: str, quote: str,
                          interval: IntervalKind) -> bool:
         row = SyncConfigurationRow

@@ -76,7 +76,7 @@ def require_scopes(
     return checker
 
 class PaginationParams(BaseModel):
-    limit: int = Field(default=50, ge=1, le=200)
-    offset: int = Field(default=0, ge=0)
+    page: int = Field(default=1, ge=1)
+    size: int = Field(default=50, ge=1, le=200)
 
 PaginationDep = Annotated[PaginationParams, Query()]

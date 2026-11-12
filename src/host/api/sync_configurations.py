@@ -4,10 +4,11 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, Query, Request, Response, status
 
 from application import SyncConfigurationAdminService, SyncConfigurationQueryService
-from core.dependencies import require_scopes
+from core.dependencies import PaginationDep, require_scopes
 from core.exceptions.not_found_error import NotFoundError
+from core.pagination import PageResponse
 from host.api.deps import get_sync_configuration_admin_service, get_sync_configuration_query_service
-from host.api.schemas import SyncConfigurationIn, SyncConfigurationOut, SyncConfigurationPageOut
+from host.api.schemas import SyncConfigurationIn, SyncConfigurationOut
 
 router = APIRouter(prefix="/sync-configurations", tags=["sync configurations"])
 
@@ -19,16 +20,14 @@ can_read = [Depends(require_scopes("sync:read"))]
 can_write = [Depends(require_scopes("sync:write"))]
 
 
-@router.get("", response_model=SyncConfigurationPageOut, dependencies=can_read)
+@router.get("", response_model=PageResponse[SyncConfigurationOut], dependencies=can_read)
 async def list_sync_configurations(
-        query: QueryDep,
+        query: QueryDep, paging: PaginationDep,
         provider: Annotated[str | None, Query(description="Provider key, e.g. nbg")] = None,
-        is_active: bool | None = None,
-        page: Annotated[int, Query(ge=1)] = 1,
-        size: Annotated[int, Query(ge=1, le=200)] = 50) -> SyncConfigurationPageOut:
-    found = await query.list(provider=provider, is_active=is_active, page=page, size=size)
-    return SyncConfigurationPageOut(items=[SyncConfigurationOut.of(v) for v in found.items],
-                                    total=found.total, page=found.page, size=found.size)
+        is_active: bool | None = None) -> PageResponse[SyncConfigurationOut]:
+    found = await query.list(provider=provider, is_active=is_active, page=paging.page,
+                             size=paging.size)
+    return PageResponse[SyncConfigurationOut].of(found, SyncConfigurationOut.of)
 
 
 @router.get("/{id}", response_model=SyncConfigurationOut, dependencies=can_read)

@@ -64,12 +64,6 @@ class SyncConfigurationOut(BaseModel):
                    progress=SyncProgressOut.model_validate(view.progress))
 
 
-class SyncConfigurationPageOut(BaseModel):
-    items: list[SyncConfigurationOut]
-    total: int
-    page: int
-    size: int
-
 
 class SyncConfigurationIn(BaseModel):
     provider: str = Field(description="Provider key from the catalog, e.g. nbg")
@@ -150,12 +144,6 @@ class AlertRuleOut(BaseModel):
         return cls.model_validate(rule)
 
 
-class AlertRulePageOut(BaseModel):
-    items: list[AlertRuleOut]
-    total: int
-    page: int
-    size: int
-
 
 class AlertOut(BaseModel):
     model_config = ConfigDict(from_attributes=True)
@@ -177,12 +165,6 @@ class AlertOut(BaseModel):
     def of(cls, alert: Alert) -> AlertOut:
         return cls.model_validate(alert)
 
-
-class AlertPageOut(BaseModel):
-    items: list[AlertOut]
-    total: int
-    page: int
-    size: int
 
 
 Email = Annotated[str, Field(max_length=320, pattern=r"^[^@\s]+@[^@\s]+\.[^@\s]+$",

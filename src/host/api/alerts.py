@@ -1,19 +1,18 @@
 from typing import Annotated
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, Query, Request, Response, status
+from fastapi import APIRouter, Depends, Request, Response, status
 
 from application import AlertRuleService, AlertService
-from core.dependencies import require_scopes
+from core.dependencies import PaginationDep, require_scopes
 from core.exceptions.not_found_error import NotFoundError
+from core.pagination import PageResponse
 from domain.enums import AlertSeverity, AlertStatus
 from host.api.deps import CurrentUserDep, get_alert_rule_service, get_alert_service
 from host.api.schemas import (
     AlertOut,
-    AlertPageOut,
     AlertRuleIn,
     AlertRuleOut,
-    AlertRulePageOut,
     AlertRulePatch,
 )
 
@@ -24,18 +23,15 @@ RulesDep = Annotated[AlertRuleService, Depends(get_alert_rule_service)]
 AlertsDep = Annotated[AlertService, Depends(get_alert_service)]
 can_read = [Depends(require_scopes("alerts:read"))]
 can_write = [Depends(require_scopes("alerts:write"))]
-PageDep = Annotated[int, Query(ge=1)]
-SizeDep = Annotated[int, Query(ge=1, le=200)]
 
 
-@rules_router.get("", response_model=AlertRulePageOut, dependencies=can_read)
-async def list_alert_rules(rules: RulesDep, *, sync_configuration_id: UUID | None = None,
-                           is_active: bool | None = None, page: PageDep = 1,
-                           size: SizeDep = 50) -> AlertRulePageOut:
+@rules_router.get("", response_model=PageResponse[AlertRuleOut], dependencies=can_read)
+async def list_alert_rules(rules: RulesDep, paging: PaginationDep, *,
+                           sync_configuration_id: UUID | None = None,
+                           is_active: bool | None = None) -> PageResponse[AlertRuleOut]:
     found = await rules.list(sync_configuration_id=sync_configuration_id,
-                             is_active=is_active, page=page, size=size)
-    return AlertRulePageOut(items=[AlertRuleOut.of(r) for r in found.items],
-                            total=found.total, page=found.page, size=found.size)
+                             is_active=is_active, page=paging.page, size=paging.size)
+    return PageResponse[AlertRuleOut].of(found, AlertRuleOut.of)
 
 
 @rules_router.get("/{id}", response_model=AlertRuleOut, dependencies=can_read)
@@ -65,14 +61,13 @@ async def delete_alert_rule(id: UUID, rules: RulesDep) -> None:
     await rules.delete(id)
 
 
-@alerts_router.get("", response_model=AlertPageOut, dependencies=can_read)
-async def list_alerts(alerts: AlertsDep, *, status: AlertStatus | None = None,
-                      severity: AlertSeverity | None = None, rule_id: UUID | None = None,
-                      page: PageDep = 1, size: SizeDep = 50) -> AlertPageOut:
-    found = await alerts.list(status=status, severity=severity, rule_id=rule_id, page=page,
-                              size=size)
-    return AlertPageOut(items=[AlertOut.of(a) for a in found.items], total=found.total,
-                        page=found.page, size=found.size)
+@alerts_router.get("", response_model=PageResponse[AlertOut], dependencies=can_read)
+async def list_alerts(alerts: AlertsDep, paging: PaginationDep, *,
+                      status: AlertStatus | None = None, severity: AlertSeverity | None = None,
+                      rule_id: UUID | None = None) -> PageResponse[AlertOut]:
+    found = await alerts.list(status=status, severity=severity, rule_id=rule_id,
+                              page=paging.page, size=paging.size)
+    return PageResponse[AlertOut].of(found, AlertOut.of)
 
 
 @alerts_router.get("/{id}", response_model=AlertOut, dependencies=can_read)

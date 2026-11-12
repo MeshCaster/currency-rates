@@ -121,7 +121,7 @@ flowchart TB
 | `src/infrastructure` | SQLAlchemy row models, repositories implementing the ports, Alembic-friendly table definitions, the seed catalog. |
 | `src/rates_provider_integration` | One client per provider, each turning the provider's response into domain `Rate` objects. |
 | `src/smtp_integration` | A small SMTP client implementing the email port. |
-| `src/core` | Cross-cutting pieces reused by every layer: configuration, database session, generic repository, background job framework (`PeriodicJob`, `JobRunner`, advisory locks, heartbeat), JWT and password hashing, error types and handlers, logging and middleware. |
+| `src/core` | Cross-cutting pieces reused by every layer: configuration, the clock, database session, generic repository, pagination (`Page`, `PageResponse`), background job framework (`PeriodicJob`, `ExclusiveJob`, `JobRunner`, advisory locks, heartbeat), JWT and password hashing, error types and handlers, logging and middleware. |
 | `src/host` | The composition root: builds the FastAPI app and the worker, wires adapters into services, and holds the provider registry. |
 | `web/app`, `web/admin` | The two React apps. |
 | `migrations` | Alembic migrations (`0001` to `0004`). |
@@ -251,6 +251,22 @@ feed's latest value, daily change and history.
 Code that the later design had replaced was removed: the first rate query and backfill
 endpoints (replaced by sync configurations and feeds), their services and ports, and
 repository methods nothing called any more.
+
+### 12. Consolidating shared code in core (12 Nov)
+
+With every feature in place, patterns that several features had each written for
+themselves were moved into `core`, so a new feature gets them for free:
+
+- **Clock** (`core.clock`): one `utc_now` / `utc_today` for services, jobs, the seed and
+  tokens; services accept a clock argument so tests can pin the time.
+- **Repository** (`core.database.repository`): `add()` detaches the inserted row, so reading
+  it back in the same transaction loads its joined data. Three repositories had each
+  worked around this on their own.
+- **Exclusive jobs** (`core.jobs.ExclusiveJob`): a periodic job that runs on one replica at
+  a time (transaction, advisory lock, skip if taken). The price-alert and email jobs build
+  on it.
+- **Pagination** (`core.pagination`, `core.dependencies`): list endpoints take `page` and
+  `size` through one dependency and return one generic `PageResponse[T]`.
 
 ---
 

@@ -2,12 +2,13 @@ import asyncio
 import logging
 from collections import Counter
 from collections.abc import Callable, Mapping
-from datetime import UTC, date, datetime
+from datetime import date
 from enum import StrEnum
 from typing import Any
 
 from application import SyncConfigurationService
 from application.ports import RateHistoryProvider
+from core.clock import utc_today
 from core.configuration.history_sync_config import HistorySyncSettings
 from core.database.errors import ConcurrencyError
 from core.database.session import Database
@@ -43,7 +44,7 @@ class SyncConfigurationJob(PeriodicJob):
         self._provider_slots: dict[str, asyncio.Semaphore] = {}
 
     async def run_once(self) -> None:
-        today = datetime.now(UTC).date()
+        today = utc_today()
         async with self._db.session() as session:
             configs = await SqlSyncConfigurationRepository(session).list_due(today)
         if not configs:

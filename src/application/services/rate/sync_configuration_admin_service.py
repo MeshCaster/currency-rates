@@ -4,7 +4,7 @@ from datetime import date
 
 from application.ports import ProviderCatalog, SyncConfigurationRepository
 from application.services.rate.models import NewSyncConfiguration, SyncConfigurationView
-from application.services.rate.sync_configuration_query_service import utc_today
+from core.clock import utc_today
 from core.exceptions.conflict_error import ConflictError
 from domain.enums import IntervalKind
 from domain.errors import InvalidSyncConfigurationError, UnsupportedSyncError

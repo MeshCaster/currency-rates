@@ -1,9 +1,10 @@
 import asyncio
 import logging
-from datetime import UTC, datetime, timedelta
+from datetime import timedelta
 from decimal import Decimal
 
 from application import PriceAlertService
+from core.clock import utc_now, utc_today
 from core.configuration.alert_config import AlertSettings
 from core.database.session import Database
 from core.jobs.base import PeriodicJob
@@ -35,7 +36,7 @@ class PriceAlertJob(PeriodicJob):
         self._slots = asyncio.Semaphore(settings.max_concurrency)
 
     async def run_once(self) -> None:
-        now = datetime.now(UTC)
+        now = utc_now()
         tick = timedelta(seconds=self._settings.interval_seconds)
         async with self._db.transaction() as session:
             if not await try_advisory_xact_lock(session, self.name):
@@ -62,7 +63,7 @@ class PriceAlertJob(PeriodicJob):
                    result.opened, result.escalated, result.resolved, len(result.skipped), pruned)
 
     async def _price(self, config: SyncConfig) -> Decimal | None:
-        today = datetime.now(UTC).date()
+        today = utc_today()
         try:
             async with self._slots:
                 provider = self._providers(config.provider, config.options)

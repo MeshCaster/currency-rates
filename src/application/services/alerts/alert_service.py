@@ -1,16 +1,13 @@
 from collections.abc import Callable
-from datetime import UTC, datetime
+from datetime import datetime
 from uuid import UUID
 
 from application.ports import AlertRepository
+from core.clock import utc_now
 from core.exceptions.not_found_error import NotFoundError
 from core.pagination import Page
 from domain.alerts import Alert
 from domain.enums import AlertSeverity, AlertStatus
-
-
-def utc_now() -> datetime:
-    return datetime.now(UTC)
 
 
 class AlertService:

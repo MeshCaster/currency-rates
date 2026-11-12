@@ -1,10 +1,11 @@
 import uuid
-from datetime import timedelta, datetime, UTC
+from datetime import timedelta
 from typing import Iterable, Any
 
 import jwt
 from pydantic import Field, BaseModel
 
+from core.clock import utc_now
 from core.configuration.security_config import SecuritySettings
 from core.exceptions.unauthorized_error import UnauthorizedError
 
@@ -26,7 +27,7 @@ def create_access_token(
     expires_delta: timedelta | None = None,
     extra_claims: dict[str, Any] | None = None,
 ) -> str:
-    now = datetime.now(UTC)
+    now = utc_now()
     expire = now + (expires_delta or timedelta(minutes=settings.access_token_expire_minutes))
     claims: dict[str, Any] = {
         **(extra_claims or {}),

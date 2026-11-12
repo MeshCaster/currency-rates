@@ -5,7 +5,7 @@ from decimal import Decimal
 from uuid import UUID
 
 from application.ports import RateRepository, SyncConfigurationRepository
-from application.services.rate.sync_configuration_query_service import utc_today
+from core.clock import utc_today
 from domain.models import Rate, SyncConfig
 
 

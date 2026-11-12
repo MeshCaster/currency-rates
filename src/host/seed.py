@@ -1,8 +1,8 @@
 import asyncio
 import logging
-from datetime import UTC, datetime
 
 from application import AuthService
+from core.clock import utc_today
 from core.configuration.settings import Settings, get_settings
 from core.database.session import Database
 from core.logging import configure_logging
@@ -15,7 +15,7 @@ logger = logging.getLogger(__name__)
 async def seed(settings: Settings, db: Database) -> None:
     async with db.transaction() as session:
         catalog = await seed_catalog(session)
-        sync = (await seed_dev_sync(session, datetime.now(UTC).date())
+        sync = (await seed_dev_sync(session, utc_today())
                 if settings.is_development else 0)
         admin = settings.admin
         if admin.email and admin.password:

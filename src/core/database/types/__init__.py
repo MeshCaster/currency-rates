@@ -1,7 +1,8 @@
 from typing import TYPE_CHECKING, Any
 
 from core.database.types.json_column import JsonColumn, JsonDict
-from core.database.types.utc_datetime import UtcDateTime, utc_now
+from core.clock import utc_now
+from core.database.types.utc_datetime import UtcDateTime
 
 if TYPE_CHECKING:
     from alembic.autogenerate.api import AutogenContext

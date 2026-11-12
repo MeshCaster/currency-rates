@@ -1,15 +1,12 @@
 from collections.abc import Callable
-from datetime import UTC, date, datetime
+from datetime import date
 from uuid import UUID
 
 from application.ports import SyncConfigurationRepository
 from application.services.rate.models import SyncConfigurationView
+from core.clock import utc_today
 from core.pagination import Page
 from domain.models import SyncConfig
-
-
-def utc_today() -> date:
-    return datetime.now(UTC).date()
 
 
 class SyncConfigurationQueryService:

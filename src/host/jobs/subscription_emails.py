@@ -1,10 +1,11 @@
 import asyncio
 import logging
 from collections import defaultdict
-from datetime import UTC, date, datetime, timedelta
+from datetime import date, timedelta
 from uuid import UUID
 
 from application import EmailSender, FeedQuote, compose_digest, plan_digests
+from core.clock import utc_now
 from core.configuration.smtp_config import NotificationSettings
 from core.database.session import Database
 from core.jobs.base import PeriodicJob
@@ -33,7 +34,7 @@ class SubscriptionEmailJob(PeriodicJob):
         self._catch_up = timedelta(hours=settings.catch_up_hours)
 
     async def run_once(self) -> None:
-        now = datetime.now(UTC)
+        now = utc_now()
         async with self._db.transaction() as session:
             if not await try_advisory_xact_lock(session, self.name):
                 return

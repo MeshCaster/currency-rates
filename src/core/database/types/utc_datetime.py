@@ -5,10 +5,6 @@ from sqlalchemy import DateTime, Dialect
 from sqlalchemy.types import TypeDecorator
 
 
-def utc_now() -> datetime:
-    return datetime.now(UTC)
-
-
 class UtcDateTime(TypeDecorator[datetime]):
 
     impl = DateTime(timezone=True)

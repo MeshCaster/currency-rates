@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
-import { api, formatChange, formatRate } from "./api";
+import { api, formatRate } from "./api";
 import type { Feed, FeedPoint } from "./api";
-import { changeClass } from "./RatesTable";
+import { ChangePill, Pair } from "./RatesTable";
 
 const RANGES = [7, 30, 90, 365];
 
@@ -22,7 +22,7 @@ export function FeedChart({ feed, onClose }: { feed: Feed; onClose: () => void }
   return (
     <section className="card">
       <div className="card-head">
-        <h2>{feed.base}/{feed.quote} <span className="muted small">{feed.provider}</span></h2>
+        <h2><Pair base={feed.base} quote={feed.quote} /> <span className="source">{feed.provider}</span></h2>
         <button className="link" onClick={onClose} aria-label="Close">✕</button>
       </div>
       <div className="big mono">{formatRate(feed.value)}</div>
@@ -41,12 +41,12 @@ export function FeedChart({ feed, onClose }: { feed: Feed; onClose: () => void }
           <Sparkline values={values} />
           <div className="row small">
             <span className="muted">{points[0].day}</span>
-            <span className={changeClass(change)}>{formatChange(change)} over the period</span>
+            <span><ChangePill change={change} /> <span className="muted">over the period</span></span>
             <span className="muted">{points[points.length - 1].day}</span>
           </div>
-          <div className="row small muted">
-            <span>low {formatRate(String(Math.min(...values)))}</span>
-            <span>high {formatRate(String(Math.max(...values)))}</span>
+          <div className="range-stats small">
+            <div><span className="muted">Low</span><b className="down">{formatRate(String(Math.min(...values)))}</b></div>
+            <div><span className="muted">High</span><b className="up">{formatRate(String(Math.max(...values)))}</b></div>
           </div>
         </>
       )}
@@ -64,11 +64,19 @@ function Sparkline({ values }: { values: number[] }) {
   const line = xy.map(([x, y], i) => `${i ? "L" : "M"}${x.toFixed(1)},${y.toFixed(1)}`).join(" ");
   const area = `${line} L${xy[xy.length - 1][0].toFixed(1)},${h} L${xy[0][0].toFixed(1)},${h} Z`;
   const rising = values[values.length - 1] >= values[0];
+  const [lastX, lastY] = xy[xy.length - 1];
   return (
     <svg viewBox={`0 0 ${w} ${h}`} className={`spark ${rising ? "up" : "down"}`} role="img"
          aria-label="Rate history">
-      <path d={area} className="spark-area" />
+      <defs>
+        <linearGradient id="spark-fill" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stopColor="currentColor" stopOpacity=".28" />
+          <stop offset="1" stopColor="currentColor" stopOpacity="0" />
+        </linearGradient>
+      </defs>
+      <path d={area} fill="url(#spark-fill)" />
       <path d={line} className="spark-line" />
+      <circle cx={lastX} cy={lastY} r="4" className="spark-dot" />
     </svg>
   );
 }

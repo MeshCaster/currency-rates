@@ -19,24 +19,30 @@ export default function App() {
   if (!session) return <Login onSignedIn={setSession} />;
 
   return (
-    <div className="page">
-      <header className="topbar">
-        <div className="brand">Rates Admin</div>
-        <nav>
-          <span className="muted">{session.user.email}</span>
-          <button className="link" onClick={signOut}>Sign out</button>
-        </nav>
-      </header>
-      <div className="tabs" role="tablist">
-        {(Object.keys(TABS) as Tab[]).map((t) => (
-          <button key={t} role="tab" aria-selected={t === tab} className={t === tab ? "on" : ""}
-                  onClick={() => setTab(t)}>{TABS[t]}</button>
-        ))}
+    <>
+      <div className="band">
+        <div className="page">
+          <header className="topbar">
+            <div className="brand"><span className="logo">¤</span>Rates Admin</div>
+            <nav>
+              <span className="muted">{session.user.email}</span>
+              <button className="link" onClick={signOut}>Sign out</button>
+            </nav>
+          </header>
+          <div className="tabs" role="tablist">
+            {(Object.keys(TABS) as Tab[]).map((t) => (
+              <button key={t} role="tab" aria-selected={t === tab} className={t === tab ? "on" : ""}
+                      onClick={() => setTab(t)}>{TABS[t]}</button>
+            ))}
+          </div>
+        </div>
       </div>
-      {tab === "sync" && <SyncPage />}
-      {tab === "rules" && <RulesPage />}
-      {tab === "alerts" && <AlertsPage />}
-    </div>
+      <div className="page lift">
+        {tab === "sync" && <SyncPage />}
+        {tab === "rules" && <RulesPage />}
+        {tab === "alerts" && <AlertsPage />}
+      </div>
+    </>
   );
 }
 
@@ -55,8 +61,13 @@ function Login({ onSignedIn }: { onSignedIn: (s: Session) => void }) {
   };
 
   return (
+    <div className="band login-screen">
     <form className="card dialog login" onSubmit={submit}>
-      <h2>Rates Admin</h2>
+      <div className="dialog-head">
+        <div className="logo">¤</div>
+        <h2>Rates Admin</h2>
+        <p className="muted small">Sign in with an admin account.</p>
+      </div>
       <label>Email
         <input type="email" required autoComplete="username" value={email}
                onChange={(e) => setEmail(e.target.value)} />
@@ -68,5 +79,6 @@ function Login({ onSignedIn }: { onSignedIn: (s: Session) => void }) {
       {error && <p className="error">{error}</p>}
       <button type="submit" disabled={busy}>Sign in</button>
     </form>
+    </div>
   );
 }

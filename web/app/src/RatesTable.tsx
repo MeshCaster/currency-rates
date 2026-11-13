@@ -31,10 +31,10 @@ export function RatesTable(props: Props) {
           {rows.map((f) => (
             <tr key={f.id} className={f.id === props.selectedId ? "selected" : ""}
                 onClick={() => props.onSelect(f)}>
-              <td><b>{f.base}/{f.quote}</b></td>
-              <td className="muted">{f.provider}</td>
+              <td><Pair base={f.base} quote={f.quote} /></td>
+              <td><span className="source">{f.provider}</span></td>
               <td className="num mono">{formatRate(f.value)}</td>
-              <td className={`num ${changeClass(f.change_percent)}`}>{formatChange(f.change_percent)}</td>
+              <td className="num"><ChangePill change={f.change_percent} /></td>
               <td className="muted small">{f.as_of ? new Date(f.as_of).toLocaleDateString() : "—"}</td>
               <td className="actions" onClick={(e) => e.stopPropagation()}>
                 <SubscribeButton feed={f} {...props} />
@@ -90,3 +90,23 @@ export function changeClass(change: string | null) {
 }
 
 export const pad = (h: number) => String(h).padStart(2, "0");
+
+export function Pair({ base, quote }: { base: string; quote: string }) {
+  return (
+    <span className="pair">
+      <span className="coins"><Coin code={base} /><Coin code={quote} /></span>
+      <b>{base}/{quote}</b>
+    </span>
+  );
+}
+
+function Coin({ code }: { code: string }) {
+  let hash = 0;
+  for (const ch of code) hash = (hash * 47 + ch.charCodeAt(0) * 13) % 360;
+  const bg = `linear-gradient(135deg, hsl(${hash} 75% 55%), hsl(${(hash + 40) % 360} 70% 45%))`;
+  return <span className="coin" style={{ background: bg }} aria-hidden>{code.slice(0, 3)}</span>;
+}
+
+export function ChangePill({ change }: { change: string | null }) {
+  return <span className={`pill ${changeClass(change)}`}>{formatChange(change)}</span>;
+}

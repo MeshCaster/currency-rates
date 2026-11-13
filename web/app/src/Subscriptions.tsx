@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { api } from "./api";
 import type { Subscription } from "./api";
-import { pad } from "./RatesTable";
+import { pad, Pair } from "./RatesTable";
 
 export function Subscriptions({ subscriptions, onChanged }:
   { subscriptions: Subscription[]; onChanged: () => void }) {
@@ -31,8 +31,8 @@ function Item({ sub, onChanged }: { sub: Subscription; onChanged: () => void }) 
   return (
     <li className={sub.is_active ? "" : "paused"}>
       <div className="row">
-        <b>{sub.feed.base}/{sub.feed.quote}</b>
-        <span className="muted small">{sub.feed.provider}</span>
+        <Pair base={sub.feed.base} quote={sub.feed.quote} />
+        <span className="source">{sub.feed.provider}</span>
       </div>
       <div className="row wrap">
         <select value={sub.hour} aria-label="Hour"

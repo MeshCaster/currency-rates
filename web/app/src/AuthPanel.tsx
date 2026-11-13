@@ -27,6 +27,11 @@ export function AuthPanel({ onSignedIn, onClose }:
   return (
     <div className="overlay" onClick={onClose}>
       <form className="card dialog" onClick={(e) => e.stopPropagation()} onSubmit={submit}>
+        <div className="dialog-head">
+          <div className="logo">¤</div>
+          <h2>{mode === "signin" ? "Welcome back" : "Create your account"}</h2>
+          <p className="muted small">Get your favourite rates by email every day.</p>
+        </div>
         <div className="segmented wide">
           <button type="button" className={mode === "signin" ? "on" : ""}
                   onClick={() => setMode("signin")}>Sign in</button>

@@ -1,3 +1,5 @@
+# The project name keeps container and volume names the same whichever folder this runs
+# from (the existing data lives in the currencyrates_pgdata volume).
 name: currencyrates
 
 services:

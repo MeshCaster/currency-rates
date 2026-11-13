@@ -1,7 +1,7 @@
 [project]
-name = "fastapi-template"
+name = "currency-rates"
 version = "0.1.0"
-description = "Production-ready FastAPI template with environment profiles"
+description = "Fiat and crypto exchange rates: history sync, price alerts and daily email digests"
 requires-python = ">=3.14"
 dependencies = [
     "fastapi>=0.115",
@@ -36,7 +36,7 @@ dev = [
 
 [tool.poe.tasks.dev]
 help = "Development: hot reload, text logs, docs on"
-cmd = "uvicorn host.app:create_app --factory --app-dir src --reload --host 127.0.0.1 --port 8000 --no-access-log"
+cmd = "uvicorn host.app:create_app --factory --app-dir src --reload --host 127.0.0.1 --port 8010 --no-access-log"
 env = { APP_ENV = "development" }
 
 [tool.poe.tasks.staging]

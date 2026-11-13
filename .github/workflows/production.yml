@@ -1,3 +1,15 @@
+# Currency Rates → production (CONTABO VPS, behind the shared nginx proxy).
+#
+# Three containers on the `meshcaster` network, none with a host port; nginx reaches them by name
+# (deploy/nginx/currency-rates.conf):
+#
+#   currency-rates-api     image currency-rates      APP_ROLE=api     migrates, then serves :8000
+#   currency-rates-worker  image currency-rates      APP_ROLE=worker  background jobs + seed
+#   currency-rates-web     image currency-rates-web                   public app :8080, admin :8081 (tunnel only)
+#
+# The worker deploys after the API, so it never starts against a schema the API has not migrated
+# yet. Both read /opt/meshcaster/currency-rates.env, written once by deploy/bootstrap-env.sh.
+# First deploy: see deploy/README.md.
 name: Deploy to production
 
 on:
@@ -22,6 +34,7 @@ jobs:
       - name: Install the back end
         run: uv sync --locked --extra postgres
 
+      # Catches a broken import or wiring before an image is built.
       - name: Import the API and the worker
         run: uv run python -c "import host.app, host.worker; host.app.create_app()"
         env:
@@ -79,8 +92,10 @@ jobs:
       username: ${{ secrets.CONTABO_USERNAME }}
       ssh-private-key: ${{ secrets.CONTABO_SSH_PRIVATE_KEY }}
 
+  # After the worker, not alongside the API: each deploy ends with `docker image prune`, and a
+  # prune while another job's image is still unpacking deletes layers mid-extraction.
   web:
-    needs: check
+    needs: worker
     permissions:
       contents: read
       packages: write

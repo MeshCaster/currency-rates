@@ -1,4 +1,5 @@
 #!/bin/sh
+# Docker HEALTHCHECK for either role (see entrypoint.sh).
 if [ "${APP_ROLE:-api}" = "worker" ]; then
   exec python -m core.jobs.heartbeat "${WORKER__HEARTBEAT_FILE:-/tmp/currency-rates-worker.heartbeat}" 60
 fi

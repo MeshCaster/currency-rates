@@ -1,4 +1,12 @@
 # syntax=docker/dockerfile:1.7
+# The public app (web/app) and the admin app (web/admin) as static files behind nginx.
+# Build from the repo root:  docker build -f docker/web/Dockerfile .
+#
+#   :8080  public app
+#   :8081  admin app
+#
+# Both call /api/v1 on their own origin; the host's nginx routes /api/ to the API container
+# (deploy/nginx/currency-rates.conf), so the browser never makes a cross-origin call.
 
 FROM node:22-alpine AS app
 WORKDIR /src

@@ -3,6 +3,14 @@
 PostgreSQL 17 (with TimescaleDB installed), migration `0004`. Generated from the SQLAlchemy
 models in `src/infrastructure/db/models` and checked against the live database.
 
+![Database schema](database-schema.png)
+
+The same diagram as a vector image: [database-schema.svg](database-schema.svg). Its Mermaid
+source is below; after editing it, regenerate both images.
+
+<details>
+<summary>Mermaid source</summary>
+
 ```mermaid
 erDiagram
   %% ---- provider catalog
@@ -150,6 +158,8 @@ erDiagram
   sync_configurations ||--o{ subscriptions : "subscribed to"
   users ||--o{ subscriptions : has
 ```
+
+</details>
 
 Solid lines are foreign keys. The dotted line is a logical link only: `rates` has a natural
 key and no foreign key, so a configuration's rates are found by pair and source.

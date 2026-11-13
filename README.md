@@ -51,6 +51,8 @@ flowchart TB
 | `web/app`, `web/admin` | The two React apps. |
 | `migrations` | Alembic migrations (`0001` to `0004`). |
 
+Tables, keys and relationships: [docs/database-schema.md](docs/database-schema.md).
+
 ## Architecture decisions
 
 - **API and worker are separate processes.** Scaling the API never multiplies the background jobs, and a slow provider never slows down HTTP requests.

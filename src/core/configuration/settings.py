@@ -14,6 +14,7 @@ from core.configuration.log_config import LogSettings
 from core.configuration.otel_config import OtelSettings
 from core.configuration.smtp_config import NotificationSettings, SmtpSettings
 from core.configuration.security_config import SecuritySettings, _INSECURE_DEFAULT_SECRET
+from core.configuration.storage_config import StorageSettings
 from core.configuration.worker_config import WorkerSettings
 from core.constants import Environment, LogFormat
 
@@ -55,6 +56,7 @@ class Settings(BaseSettings):
     smtp: SmtpSettings = Field(default_factory=SmtpSettings)
     notifications: NotificationSettings = Field(default_factory=NotificationSettings)
     worker: WorkerSettings = Field(default_factory=WorkerSettings)
+    storage: StorageSettings = Field(default_factory=StorageSettings)
 
     @property
     def is_development(self) -> bool:

@@ -131,6 +131,7 @@ label input, label select { font-weight: 400; }
   font-size: .56rem; font-weight: 750; color: #fff; letter-spacing: -.02em;
   border: 2px solid var(--surface); box-shadow: 0 1px 3px rgb(0 0 0 / 15%);
 }
+img.coin { object-fit: cover; background: var(--surface); }
 .coin + .coin { margin-left: -5px; }
 .source {
   display: inline-block; font-size: .78rem; padding: .12rem .5rem; border-radius: 6px;

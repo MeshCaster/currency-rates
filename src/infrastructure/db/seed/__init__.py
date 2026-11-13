@@ -27,8 +27,8 @@ class CatalogReport:
 async def seed_catalog(session: AsyncSession) -> CatalogReport:
     currencies = await upsert(
         session, CurrencyRow,
-        [{"code": c.code, "name": c.name, "kind": c.kind} for c in CURRENCIES],
-        conflict_columns=["code"], update_columns=["name", "kind"])
+        [{"code": c.code, "name": c.name, "kind": c.kind, "icon": c.icon} for c in CURRENCIES],
+        conflict_columns=["code"], update_columns=["name", "kind", "icon"])
     providers = await upsert(
         session, ProviderRow,
         [{"key": p.key, "display_name": p.display_name, "kind": p.kind,

@@ -6,7 +6,7 @@ from uuid import UUID
 from core.pagination import Page
 from domain.alerts import Alert, AlertRule, PriceSample
 from domain.enums import AlertSeverity, AlertStatus, IntervalKind
-from domain.models import ProviderCapability, ProviderPair, Rate, SyncConfig
+from domain.models import Currency, ProviderCapability, ProviderPair, Rate, SyncConfig
 from domain.users import Subscription, User
 
 
@@ -47,6 +47,7 @@ class ProviderCatalog(Protocol):
     async def get_pair(self, provider_id: UUID, base: str, quote: str) -> ProviderPair | None: ...
     async def get_pair_by_id(self, id: UUID) -> ProviderPair | None: ...
     async def pairs(self) -> list[ProviderPair]: ...
+    async def currencies(self) -> list[Currency]: ...
 
 
 class AlertRuleRepository(Protocol):

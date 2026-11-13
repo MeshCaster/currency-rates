@@ -8,8 +8,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from core.database.repository import insert_ignore, upsert
 from infrastructure.db.models import (
     CurrencyRow,
-    ProviderCurrencyRow,
     ProviderIntervalRow,
+    ProviderPairRow,
     ProviderRow,
     SyncConfigurationRow,
 )
@@ -21,7 +21,7 @@ class CatalogReport:
     currencies: int
     providers: int
     intervals: int
-    provider_currencies: int
+    provider_pairs: int
 
 
 async def seed_catalog(session: AsyncSession) -> CatalogReport:
@@ -45,13 +45,13 @@ async def seed_catalog(session: AsyncSession) -> CatalogReport:
         conflict_columns=["provider_id", "interval"],
         update_columns=["is_native", "history_start", "history_window_days",
                         "max_points_per_request"])
-    provider_currencies = await upsert(
-        session, ProviderCurrencyRow,
-        [{"provider_id": ids[p.key], "currency_code": code,
-          "provider_code": p.provider_codes.get(code)}
-         for p in PROVIDERS for code in p.currencies],
-        conflict_columns=["provider_id", "currency_code"], update_columns=["provider_code"])
-    return CatalogReport(currencies, providers, intervals, provider_currencies)
+    provider_pairs = await upsert(
+        session, ProviderPairRow,
+        [{"provider_id": ids[p.key], "base": pair.base, "quote": pair.quote,
+          "symbol": pair.symbol}
+         for p in PROVIDERS for pair in p.pairs],
+        conflict_columns=["provider_id", "base", "quote"], update_columns=["symbol"])
+    return CatalogReport(currencies, providers, intervals, provider_pairs)
 
 
 async def seed_dev_sync(session: AsyncSession, today: date) -> int:

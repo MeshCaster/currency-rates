@@ -1,12 +1,12 @@
 from uuid import UUID
 
-from sqlalchemy import exists, select
+from sqlalchemy import exists, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from domain.enums import IntervalKind, ProviderKind
-from domain.models import IntervalCapability, ProviderCapability
-from infrastructure.db.models.provider import ProviderCurrencyRow, ProviderIntervalRow, ProviderRow
+from domain.models import IntervalCapability, ProviderCapability, ProviderPair
+from infrastructure.db.models.provider import ProviderIntervalRow, ProviderPairRow, ProviderRow
 
 
 class ProviderMapper:
@@ -18,6 +18,11 @@ class ProviderMapper:
                 interval=i.interval, is_native=i.is_native, history_start=i.history_start,
                 history_window_days=i.history_window_days,
                 max_points_per_request=i.max_points_per_request) for i in row.intervals))
+
+
+def _pair(row: ProviderPairRow) -> ProviderPair:
+    return ProviderPair(id=row.id, provider_id=row.provider_id, provider=row.provider.key,
+                        base=row.base, quote=row.quote, symbol=row.symbol)
 
 
 class SqlProviderRepository:
@@ -45,8 +50,21 @@ class SqlProviderRepository:
         rows = (await self._session.scalars(stmt)).all()
         return [self.mapper.to_domain(r) for r in rows]
 
-    async def supports_currency(self, provider_id: UUID, currency: str) -> bool:
-        return bool(await self._session.scalar(select(self._supports(provider_id, currency))))
+    async def get_pair(self, provider_id: UUID, base: str, quote: str) -> ProviderPair | None:
+        row = await self._session.scalar(select(ProviderPairRow).where(
+            ProviderPairRow.provider_id == provider_id, ProviderPairRow.base == base.upper(),
+            ProviderPairRow.quote == quote.upper()))
+        return _pair(row) if row is not None else None
+
+    async def get_pair_by_id(self, id: UUID) -> ProviderPair | None:
+        row = await self._session.get(ProviderPairRow, id)
+        return _pair(row) if row is not None else None
+
+    async def pairs(self) -> list[ProviderPair]:
+        rows = (await self._session.scalars(
+            select(ProviderPairRow).join(ProviderRow)
+            .order_by(ProviderRow.key, ProviderPairRow.base, ProviderPairRow.quote))).all()
+        return [_pair(r) for r in rows]
 
     @staticmethod
     def _select():  # type: ignore[no-untyped-def]
@@ -54,5 +72,6 @@ class SqlProviderRepository:
 
     @staticmethod
     def _supports(provider_id, currency: str):  # type: ignore[no-untyped-def]
-        return exists().where(ProviderCurrencyRow.provider_id == provider_id,
-                              ProviderCurrencyRow.currency_code == currency.upper())
+        code = currency.upper()
+        return exists().where(ProviderPairRow.provider_id == provider_id,
+                              or_(ProviderPairRow.base == code, ProviderPairRow.quote == code))

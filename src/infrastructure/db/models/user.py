@@ -15,7 +15,7 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from core.database.identity import EntityBase
 from domain.enums import UserRole
 from infrastructure.db.models.columns import enum_column
-from infrastructure.db.models.sync_configuration import SyncConfigurationRow
+from infrastructure.db.models.provider import ProviderPairRow
 
 
 class UserRow(EntityBase):
@@ -31,19 +31,16 @@ class SubscriptionRow(EntityBase):
     __tablename__ = "subscriptions"
 
     user_id: Mapped[UUID] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"))
-    sync_configuration_id: Mapped[UUID] = mapped_column(
-        ForeignKey("sync_configurations.id", ondelete="CASCADE"))
+    provider_pair_id: Mapped[UUID] = mapped_column(ForeignKey("provider_pairs.id"))
     hour: Mapped[int] = mapped_column(SmallInteger)
     timezone: Mapped[str] = mapped_column(String(64))
     is_active: Mapped[bool] = mapped_column(default=True, server_default=true())
     last_sent_on: Mapped[date | None]
 
-    sync_configuration: Mapped[SyncConfigurationRow] = relationship(lazy="joined",
-                                                                    innerjoin=True)
+    pair: Mapped[ProviderPairRow] = relationship(lazy="joined", innerjoin=True)
 
     __table_args__ = (
-        UniqueConstraint("user_id", "sync_configuration_id",
-                         name="uq_subscriptions_user_configuration"),
+        UniqueConstraint("user_id", "provider_pair_id", name="uq_subscriptions_user_pair"),
         CheckConstraint("hour BETWEEN 0 AND 23", name="hour_of_day"),
-        Index("ix_subscriptions_sync_configuration_id", "sync_configuration_id"),
+        Index("ix_subscriptions_provider_pair_id", "provider_pair_id"),
     )

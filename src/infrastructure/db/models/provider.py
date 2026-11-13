@@ -1,7 +1,7 @@
 from datetime import date
 from uuid import UUID
 
-from sqlalchemy import ForeignKey, String, UniqueConstraint, false, true
+from sqlalchemy import CheckConstraint, ForeignKey, String, UniqueConstraint, false, true
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from core.database.audit import AuditedBase
@@ -22,6 +22,10 @@ class ProviderRow(IdentityMixin, AuditedBase):
     intervals: Mapped[list[ProviderIntervalRow]] = relationship(
         back_populates="provider", lazy="raise", order_by="ProviderIntervalRow.interval",
         cascade="all, delete-orphan", passive_deletes=True)
+    pairs: Mapped[list[ProviderPairRow]] = relationship(
+        back_populates="provider", lazy="raise",
+        order_by="(ProviderPairRow.base, ProviderPairRow.quote)",
+        cascade="all, delete-orphan", passive_deletes=True)
 
 
 class ProviderIntervalRow(IdentityMixin, AuditedBase):
@@ -41,15 +45,20 @@ class ProviderIntervalRow(IdentityMixin, AuditedBase):
     )
 
 
-class ProviderCurrencyRow(IdentityMixin, AuditedBase):
-    __tablename__ = "provider_currencies"
+class ProviderPairRow(IdentityMixin, AuditedBase):
+    __tablename__ = "provider_pairs"
 
     provider_id: Mapped[UUID] = mapped_column(ForeignKey("providers.id", ondelete="CASCADE"))
-    currency_code: Mapped[str] = mapped_column(
+    base: Mapped[str] = mapped_column(
         String(10), ForeignKey("currencies.code", ondelete="CASCADE", onupdate="CASCADE"))
-    provider_code: Mapped[str | None] = mapped_column(String(40))
-    available_from: Mapped[date | None]
+    quote: Mapped[str] = mapped_column(
+        String(10), ForeignKey("currencies.code", ondelete="CASCADE", onupdate="CASCADE"))
+    symbol: Mapped[str | None] = mapped_column(String(40))
+
+    provider: Mapped[ProviderRow] = relationship(back_populates="pairs", lazy="joined",
+                                                 innerjoin=True)
 
     __table_args__ = (
-        UniqueConstraint("provider_id", "currency_code"),
+        UniqueConstraint("provider_id", "base", "quote", name="uq_provider_pairs_provider_pair"),
+        CheckConstraint("base <> quote", name="base_differs_from_quote"),
     )

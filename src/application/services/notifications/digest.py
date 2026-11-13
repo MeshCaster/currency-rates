@@ -34,7 +34,7 @@ class Digest:
 
     @property
     def feed_ids(self) -> set[UUID]:
-        return {i.subscription.sync_configuration_id for i in self.items}
+        return {i.subscription.provider_pair_id for i in self.items}
 
 
 @dataclass(frozen=True, slots=True)
@@ -57,8 +57,8 @@ def plan_digests(deliverable: Sequence[tuple[Subscription, str]], now: datetime,
 
 
 def compose_digest(digest: Digest, quotes: Mapping[UUID, FeedQuote]) -> ComposedEmail | None:
-    lines = [(item, quotes[item.subscription.sync_configuration_id]) for item in digest.items
-             if item.subscription.sync_configuration_id in quotes]
+    lines = [(item, quotes[item.subscription.provider_pair_id]) for item in digest.items
+             if item.subscription.provider_pair_id in quotes]
     if not lines:
         return None
     day = min(item.local_day for item, _ in lines)
@@ -68,15 +68,15 @@ def compose_digest(digest: Digest, quotes: Mapping[UUID, FeedQuote]) -> Composed
     for item, quote in lines:
         sub = item.subscription
         pair, value = f"{sub.base}/{sub.quote}", _amount(quote.latest.value)
-        change = _change(quote)
-        text_rows.append(f"  {pair:<10} {value:>18}   {change:<24} {sub.provider}")
+        on, change = f"{quote.latest.as_of:%d %b}", _change(quote)
+        text_rows.append(f"  {pair:<10} {value:>18}  {on:<7} {change:<24} {sub.provider}")
         html_rows.append(
             f"<tr><td><b>{escape(pair)}</b></td><td style='text-align:right'>{escape(value)}"
-            f"</td><td>{escape(change)}</td><td style='color:#666'>{escape(sub.provider)}"
-            "</td></tr>")
+            f"</td><td style='color:#666'>{escape(on)}</td><td>{escape(change)}</td>"
+            f"<td style='color:#666'>{escape(sub.provider)}</td></tr>")
     missing = len(digest.items) - len(lines)
-    note = (f"\n{missing} of your rates couldn't be fetched just now; they'll come in a "
-            "later email today.\n") if missing else ""
+    note = (f"\n{missing} of your rates have no stored daily value yet; they'll be included "
+            "once they are collected.\n") if missing else ""
 
     text = (f"Hello,\n\nYour currency rates for {day:%d %b %Y}:\n\n" + "\n".join(text_rows)
             + f"\n{note}\nYou get this email because you subscribed to these rates. "

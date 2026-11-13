@@ -1,5 +1,5 @@
 from collections.abc import Mapping
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import Any
 
 from domain.enums import CurrencyKind, IntervalKind, ProviderKind
@@ -11,6 +11,13 @@ class CurrencySeed:
     code: str
     name: str
     kind: CurrencyKind
+
+
+@dataclass(frozen=True, slots=True)
+class PairSeed:
+    base: str
+    quote: str
+    symbol: str | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -30,6 +37,5 @@ class ProviderSeed:
     kind: ProviderKind
     requires_api_key: bool = False
     intervals: tuple[IntervalCapability, ...] = ()
-    currencies: tuple[str, ...] = ()
-    provider_codes: Mapping[str, str] = field(default_factory=dict)
+    pairs: tuple[PairSeed, ...] = ()
     dev_sync: tuple[SyncSeed, ...] = ()

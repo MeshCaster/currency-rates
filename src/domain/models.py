@@ -6,6 +6,7 @@ from uuid import UUID
 
 from domain.enums import IntervalKind, ProviderKind, SyncState, SyncStatus
 
+
 @dataclass(frozen=True, slots=True)
 class Rate:
 
@@ -29,6 +30,20 @@ class IntervalCapability:
             today - timedelta(days=self.history_window_days) if self.history_window_days else None,
         ) if d is not None]
         return max(candidates) if candidates else None
+
+@dataclass(frozen=True, slots=True)
+class ProviderPair:
+    id: UUID
+    provider_id: UUID
+    provider: str
+    base: str
+    quote: str
+    symbol: str | None = None
+
+    @property
+    def label(self) -> str:
+        return f"{self.base}/{self.quote}"
+
 
 @dataclass(frozen=True, slots=True)
 class ProviderCapability:

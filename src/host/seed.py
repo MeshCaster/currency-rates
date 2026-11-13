@@ -22,10 +22,10 @@ async def seed(settings: Settings, db: Database) -> None:
             outcome = await AuthService(SqlUserRepository(session)).ensure_admin(
                 admin.email, admin.password.get_secret_value())
             logger.info("Seed: admin %s %s", admin.email, outcome)
-    logger.info("Seed: %d currencies, %d providers, %d intervals, %d provider currencies "
+    logger.info("Seed: %d currencies, %d providers, %d intervals, %d provider pairs "
                 "inserted or changed; %d dev sync configurations added",
                 catalog.currencies, catalog.providers, catalog.intervals,
-                catalog.provider_currencies, sync)
+                catalog.provider_pairs, sync)
 
 
 async def _main(settings: Settings) -> None:

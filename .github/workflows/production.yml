@@ -1,0 +1,98 @@
+name: Deploy to production
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: production
+  cancel-in-progress: false
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+
+      - name: Install the back end
+        run: uv sync --locked --extra postgres
+
+      - name: Import the API and the worker
+        run: uv run python -c "import host.app, host.worker; host.app.create_app()"
+        env:
+          APP_ENV: development
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: web/*/package-lock.json
+
+      - name: Build the public app
+        working-directory: web/app
+        run: npm ci && npm run build
+
+      - name: Build the admin app
+        working-directory: web/admin
+        run: npm ci && npm run build
+
+  api:
+    needs: check
+    permissions:
+      contents: read
+      packages: write
+    uses: MeshCaster/DevOps/.github/workflows/deploy-container.yml@main
+    with:
+      image-name: currency-rates
+      container-name: currency-rates-api
+      container-port: 8000
+      aspnetcore: false
+      extra-env: "-e APP_ROLE=api"
+      env-file: /opt/meshcaster/currency-rates.env
+      network: meshcaster
+    secrets:
+      host: ${{ secrets.CONTABO_HOST }}
+      username: ${{ secrets.CONTABO_USERNAME }}
+      ssh-private-key: ${{ secrets.CONTABO_SSH_PRIVATE_KEY }}
+
+  worker:
+    needs: api
+    permissions:
+      contents: read
+      packages: write
+    uses: MeshCaster/DevOps/.github/workflows/deploy-container.yml@main
+    with:
+      image-name: currency-rates
+      container-name: currency-rates-worker
+      container-port: 8000
+      aspnetcore: false
+      extra-env: "-e APP_ROLE=worker"
+      env-file: /opt/meshcaster/currency-rates.env
+      network: meshcaster
+    secrets:
+      host: ${{ secrets.CONTABO_HOST }}
+      username: ${{ secrets.CONTABO_USERNAME }}
+      ssh-private-key: ${{ secrets.CONTABO_SSH_PRIVATE_KEY }}
+
+  web:
+    needs: check
+    permissions:
+      contents: read
+      packages: write
+    uses: MeshCaster/DevOps/.github/workflows/deploy-container.yml@main
+    with:
+      image-name: currency-rates-web
+      container-name: currency-rates-web
+      dockerfile: docker/web/Dockerfile
+      container-port: 8080
+      aspnetcore: false
+      network: meshcaster
+    secrets:
+      host: ${{ secrets.CONTABO_HOST }}
+      username: ${{ secrets.CONTABO_USERNAME }}
+      ssh-private-key: ${{ secrets.CONTABO_SSH_PRIVATE_KEY }}

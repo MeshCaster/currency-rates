@@ -12,14 +12,15 @@ from domain.enums import (
     UserRole,
 )
 from domain.errors import DomainError
-from domain.users import ROLE_SCOPES, Subscription, User
 from domain.models import (
     IntervalCapability,
     ProviderCapability,
+    ProviderPair,
     Rate,
     SyncConfig,
     SyncProgress,
 )
+from domain.users import ROLE_SCOPES, Subscription, User
 
 __all__ = [
     "Alert",
@@ -37,6 +38,7 @@ __all__ = [
     "IntervalKind",
     "ProviderCapability",
     "ProviderKind",
+    "ProviderPair",
     "Rate",
     "RateKind",
     "SyncConfig",

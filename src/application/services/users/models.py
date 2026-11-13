@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 from uuid import UUID
 
-from domain.users import User
+from domain.users import Subscription, User
 
 
 @dataclass(frozen=True, slots=True)
@@ -18,7 +18,7 @@ class SignedIn:
 
 @dataclass(frozen=True, slots=True)
 class NewSubscription:
-    sync_configuration_id: UUID
+    provider_pair_id: UUID
     hour: int
     timezone: str = "UTC"
     is_active: bool = True
@@ -29,3 +29,9 @@ class SubscriptionChanges:
     hour: int | None = None
     timezone: str | None = None
     is_active: bool | None = None
+
+
+@dataclass(frozen=True, slots=True)
+class SubscriptionView:
+    subscription: Subscription
+    collecting: bool

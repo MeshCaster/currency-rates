@@ -13,6 +13,7 @@ from application import (
     NewSyncConfiguration,
     SignedIn,
     SubscriptionChanges,
+    SubscriptionView,
     SyncConfigurationView,
 )
 from domain.alerts import Alert, AlertRule, AlertTier
@@ -25,7 +26,7 @@ from domain.enums import (
     SyncStatus,
     UserRole,
 )
-from domain.users import Subscription, User
+from domain.users import User
 
 
 class SyncProgressOut(BaseModel):
@@ -219,8 +220,8 @@ class FeedRateOut(FeedOut):
 
     @classmethod
     def of_view(cls, view: FeedView) -> FeedRateOut:
-        c, latest, previous = view.config, view.latest, view.previous
-        return cls(id=c.id, provider=c.provider, base=c.base, quote=c.quote,
+        p, latest, previous = view.pair, view.latest, view.previous
+        return cls(id=p.id, provider=p.provider, base=p.base, quote=p.quote,
                    value=latest.value if latest else None,
                    as_of=latest.as_of if latest else None,
                    previous_value=previous.value if previous else None,
@@ -234,7 +235,7 @@ class FeedPointOut(BaseModel):
 
 
 class SubscriptionIn(BaseModel):
-    feed_id: UUID = Field(description="From GET /feeds")
+    feed_id: UUID = Field(description="A provider pair id from GET /feeds")
     hour: int = Field(ge=0, le=23, description="Hour of the day to get the email, 0-23")
     timezone: str = Field(default="UTC", max_length=64,
                           description="IANA time zone the hour is in, e.g. Asia/Tbilisi")
@@ -259,11 +260,13 @@ class SubscriptionOut(BaseModel):
     hour: int
     timezone: str
     is_active: bool
+    collecting: bool = Field(description="False = nothing collects this rate now, so no email")
     last_sent_on: date | None
 
     @classmethod
-    def of(cls, sub: Subscription) -> SubscriptionOut:
-        return cls(id=sub.id, feed=FeedOut(id=sub.sync_configuration_id, provider=sub.provider,
+    def of(cls, view: SubscriptionView) -> SubscriptionOut:
+        sub = view.subscription
+        return cls(id=sub.id, feed=FeedOut(id=sub.provider_pair_id, provider=sub.provider,
                                            base=sub.base, quote=sub.quote),
                    hour=sub.hour, timezone=sub.timezone, is_active=sub.is_active,
-                   last_sent_on=sub.last_sent_on)
+                   collecting=view.collecting, last_sent_on=sub.last_sent_on)

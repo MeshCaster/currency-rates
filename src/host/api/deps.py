@@ -3,9 +3,16 @@ from uuid import UUID
 
 from fastapi import Depends
 
-from application import (AlertRuleService, AlertService, AuthService, FeedQueryService,
-                         IssuedToken, SubscriptionService, SyncConfigurationAdminService,
-                         SyncConfigurationQueryService)
+from application import (
+    AlertRuleService,
+    AlertService,
+    AuthService,
+    FeedQueryService,
+    IssuedToken,
+    SubscriptionService,
+    SyncConfigurationAdminService,
+    SyncConfigurationQueryService,
+)
 from core.dependencies import CurrentPrincipalDep, DbSessionDep, SettingsDep
 from core.exceptions.unauthorized_error import UnauthorizedError
 from core.security.token import create_access_token
@@ -17,12 +24,12 @@ from infrastructure.db.repositories.alert_repository import (
 )
 from infrastructure.db.repositories.provider_repository import SqlProviderRepository
 from infrastructure.db.repositories.rate_repository import SqlRateRepository
+from infrastructure.db.repositories.sync_configuration_repository import (
+    SqlSyncConfigurationRepository,
+)
 from infrastructure.db.repositories.user_repository import (
     SqlSubscriptionRepository,
     SqlUserRepository,
-)
-from infrastructure.db.repositories.sync_configuration_repository import (
-    SqlSyncConfigurationRepository,
 )
 
 
@@ -73,8 +80,10 @@ CurrentUserDep = Annotated[User, Depends(get_current_user)]
 
 def get_subscription_service(session: DbSessionDep) -> SubscriptionService:
     return SubscriptionService(SqlSubscriptionRepository(session),
-                               SqlSyncConfigurationRepository(session))
+                               SqlSyncConfigurationRepository(session),
+                               SqlProviderRepository(session))
 
 
 def get_feed_query_service(session: DbSessionDep) -> FeedQueryService:
-    return FeedQueryService(SqlSyncConfigurationRepository(session), SqlRateRepository(session))
+    return FeedQueryService(SqlSyncConfigurationRepository(session), SqlRateRepository(session),
+                            SqlProviderRepository(session))

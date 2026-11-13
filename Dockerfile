@@ -34,10 +34,7 @@ ENV PATH="/app/.venv/bin:$PATH" \
 USER app
 EXPOSE 8000
 
-HEALTHCHECK --interval=30s --timeout=3s --start-period=10s --retries=3 \
-    CMD ["python", "-c", "import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://127.0.0.1:8000/health/live', timeout=2).status == 200 else 1)"]
+HEALTHCHECK --interval=30s --timeout=3s --start-period=20s --retries=3 \
+    CMD ["/app/docker/healthcheck.sh"]
 
-CMD ["uvicorn", "host.app:create_app", "--factory", "--app-dir", "src", \
-     "--host", "0.0.0.0", "--port", "8000", \
-     "--proxy-headers", "--forwarded-allow-ips", "*", \
-     "--no-access-log", "--timeout-graceful-shutdown", "20"]
+ENTRYPOINT ["/app/docker/entrypoint.sh"]

@@ -35,6 +35,5 @@ def build_jobs(settings: Settings, state: AppState) -> list[Job]:
             logger.warning("Subscription emails disabled: DATABASE__URL or SMTP__HOST is not "
                            "configured")
         else:
-            jobs.append(SubscriptionEmailJob(db, HistoryProviders(state["http_client"]), mailer,
-                                             settings.notifications))
+            jobs.append(SubscriptionEmailJob(db, mailer, settings.notifications))
     return jobs

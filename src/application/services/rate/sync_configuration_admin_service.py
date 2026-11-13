@@ -47,11 +47,9 @@ class SyncConfigurationAdminService:
             raise InvalidSyncConfigurationError(
                 f"provider {provider.key!r} serves {new.interval} rates from {earliest} only")
 
-        unsupported = [c for c in (base, quote)
-                       if not await self._catalog.supports_currency(provider.id, c)]
-        if unsupported:
+        if await self._catalog.get_pair(provider.id, base, quote) is None:
             raise InvalidSyncConfigurationError(
-                f"provider {provider.key!r} doesn't list {', '.join(unsupported)}")
+                f"provider {provider.key!r} doesn't quote {base}/{quote}")
         if await self._configs.exists_for(provider.id, base, quote, new.interval):
             raise ConflictError(
                 f"provider {provider.key!r} already syncs {base}/{quote} {new.interval}",

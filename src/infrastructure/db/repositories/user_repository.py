@@ -9,8 +9,6 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from core.database.mapper import DataclassMapper
 from core.database.repository import SqlAlchemyRepository
 from domain.users import Subscription, User, normalize_email
-from infrastructure.db.models.provider import ProviderRow
-from infrastructure.db.models.sync_configuration import SyncConfigurationRow
 from infrastructure.db.models.user import SubscriptionRow, UserRow
 
 
@@ -27,16 +25,16 @@ class SqlUserRepository(SqlAlchemyRepository[User, UUID, UserRow]):
 
 class SubscriptionMapper:
     def to_domain(self, row: SubscriptionRow) -> Subscription:
-        config = row.sync_configuration
+        pair = row.pair
         return Subscription(
-            id=row.id, user_id=row.user_id, sync_configuration_id=row.sync_configuration_id,
+            id=row.id, user_id=row.user_id, provider_pair_id=row.provider_pair_id,
             hour=row.hour, timezone=row.timezone, is_active=row.is_active,
-            last_sent_on=row.last_sent_on, provider=config.provider.key, base=config.base,
-            quote=config.quote, version=row.version)
+            last_sent_on=row.last_sent_on, provider=pair.provider.key, base=pair.base,
+            quote=pair.quote, version=row.version)
 
     def to_values(self, sub: Subscription) -> dict[str, Any]:
         return {"id": sub.id, "user_id": sub.user_id,
-                "sync_configuration_id": sub.sync_configuration_id, "hour": sub.hour,
+                "provider_pair_id": sub.provider_pair_id, "hour": sub.hour,
                 "timezone": sub.timezone, "is_active": sub.is_active,
                 "last_sent_on": sub.last_sent_on, "version": sub.version}
 
@@ -52,18 +50,15 @@ class SqlSubscriptionRepository(SqlAlchemyRepository[Subscription, UUID, Subscri
         return await self._find(SubscriptionRow.user_id == user_id,
                                 order_by=[SubscriptionRow.created_at, SubscriptionRow.id])
 
-    async def exists_for(self, user_id: UUID, sync_configuration_id: UUID) -> bool:
+    async def exists_for(self, user_id: UUID, provider_pair_id: UUID) -> bool:
         return bool(await self._find(SubscriptionRow.user_id == user_id,
-                                     SubscriptionRow.sync_configuration_id == sync_configuration_id,
+                                     SubscriptionRow.provider_pair_id == provider_pair_id,
                                      limit=1))
 
     async def list_deliverable(self) -> list[tuple[Subscription, str]]:
         stmt = (select(SubscriptionRow, UserRow.email)
                 .join(UserRow, UserRow.id == SubscriptionRow.user_id)
-                .where(SubscriptionRow.is_active, UserRow.is_active,
-                       SubscriptionRow.sync_configuration.has(
-                           (SyncConfigurationRow.is_active)
-                           & SyncConfigurationRow.provider.has(ProviderRow.is_active)))
+                .where(SubscriptionRow.is_active, UserRow.is_active)
                 .order_by(UserRow.email, SubscriptionRow.id))
         rows = (await self._session.execute(stmt)).all()
         return [(self.mapper.to_domain(row), email) for row, email in rows]

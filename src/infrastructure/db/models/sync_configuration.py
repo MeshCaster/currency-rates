@@ -46,13 +46,9 @@ class SyncConfigurationRow(EntityBase):
             ["provider_intervals.provider_id", "provider_intervals.interval"],
             name="fk_sync_configurations_interval_provider_intervals"),
         ForeignKeyConstraint(
-            ["provider_id", "base"],
-            ["provider_currencies.provider_id", "provider_currencies.currency_code"],
-            name="fk_sync_configurations_base_provider_currencies"),
-        ForeignKeyConstraint(
-            ["provider_id", "quote"],
-            ["provider_currencies.provider_id", "provider_currencies.currency_code"],
-            name="fk_sync_configurations_quote_provider_currencies"),
+            ["provider_id", "base", "quote"],
+            ["provider_pairs.provider_id", "provider_pairs.base", "provider_pairs.quote"],
+            name="fk_sync_configurations_pair_provider_pairs"),
         UniqueConstraint("provider_id", "base", "quote", "interval",
                          name="uq_sync_configurations_provider_pair_interval"),
         CheckConstraint("base <> quote", name="base_differs_from_quote"),

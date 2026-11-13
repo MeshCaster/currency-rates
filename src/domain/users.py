@@ -37,7 +37,7 @@ class User:
 class Subscription:
     id: UUID
     user_id: UUID
-    sync_configuration_id: UUID
+    provider_pair_id: UUID
     hour: int
     timezone: str = "UTC"
     is_active: bool = True

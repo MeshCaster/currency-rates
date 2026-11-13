@@ -1,4 +1,3 @@
-import asyncio
 import logging
 from collections import defaultdict
 from datetime import date, timedelta
@@ -6,14 +5,13 @@ from uuid import UUID
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from application import EmailSender, FeedQuote, compose_digest, plan_digests
+from application import EmailSender, FeedQueryService, FeedQuote, compose_digest, plan_digests
 from core.clock import utc_now
 from core.configuration.smtp_config import NotificationSettings
 from core.database.session import Database
 from core.jobs.exclusive import ExclusiveJob
-from domain.enums import IntervalKind
-from domain.models import SyncConfig
-from host.jobs.history_sync import HistoryProviderFactory
+from infrastructure.db.repositories.provider_repository import SqlProviderRepository
+from infrastructure.db.repositories.rate_repository import SqlRateRepository
 from infrastructure.db.repositories.sync_configuration_repository import (
     SqlSyncConfigurationRepository,
 )
@@ -21,15 +19,13 @@ from infrastructure.db.repositories.user_repository import SqlSubscriptionReposi
 
 logger = logging.getLogger(__name__)
 
-_QUOTE_DAYS = 4
 
 
 class SubscriptionEmailJob(ExclusiveJob):
 
-    def __init__(self, db: Database, providers: HistoryProviderFactory, mailer: EmailSender,
+    def __init__(self, db: Database, mailer: EmailSender,
                  settings: NotificationSettings) -> None:
         super().__init__(db, settings.interval_seconds, settings.timeout_seconds)
-        self._providers = providers
         self._mailer = mailer
         self._catch_up = timedelta(hours=settings.catch_up_hours)
 
@@ -39,10 +35,15 @@ class SubscriptionEmailJob(ExclusiveJob):
         digests = plan_digests(deliverable, now, self._catch_up)
         if not digests:
             return
-        configs = await SqlSyncConfigurationRepository(session).get_many(
-            set().union(*(d.feed_ids for d in digests)))
-        fetched = await asyncio.gather(*(self._quote(c, now.date()) for c in configs))
-        quotes = {c.id: q for c, q in zip(configs, fetched, strict=True) if q is not None}
+        catalog = SqlProviderRepository(session)
+        feeds = FeedQueryService(SqlSyncConfigurationRepository(session),
+                                 SqlRateRepository(session), catalog)
+        quotes: dict[UUID, FeedQuote] = {}
+        for pair_id in set().union(*(d.feed_ids for d in digests)):
+            pair = await catalog.get_pair_by_id(pair_id)
+            day = await feeds.last_completed_day(pair) if pair is not None else None
+            if day is not None:
+                quotes[pair_id] = FeedQuote(*day)
 
         sent = failed = 0
         for digest in digests:
@@ -64,20 +65,3 @@ class SubscriptionEmailJob(ExclusiveJob):
                     await SqlSubscriptionRepository(mark_session).mark_sent(ids, day)
         logger.info("%s: %d emails sent, %d failed, %d skipped (no rates yet)", self.name, sent,
                     failed, len(digests) - sent - failed)
-
-    async def _quote(self, config: SyncConfig, today: date) -> FeedQuote | None:
-        try:
-            provider = self._providers(config.provider, config.options)
-            rates = await provider.get_history(config.base, config.quote,
-                                               today - timedelta(days=_QUOTE_DAYS), today,
-                                               IntervalKind.DAILY)
-        except Exception as e:
-            logger.warning("%s: no rate for %s %s/%s: %s", self.name, config.provider,
-                           config.base, config.quote, e)
-            return None
-        if not rates:
-            return None
-        latest = rates[-1]
-        previous = next((r for r in reversed(rates) if r.as_of.date() < latest.as_of.date()),
-                        None)
-        return FeedQuote(latest, previous)

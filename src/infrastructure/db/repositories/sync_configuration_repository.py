@@ -8,8 +8,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.database.errors import ConcurrencyError, NotFoundError
 from core.database.repository import SqlAlchemyRepository
-from core.pagination import Page
 from core.database.types import utc_now
+from core.pagination import Page
 from domain.enums import IntervalKind, SyncStatus
 from domain.models import SyncConfig
 from infrastructure.db.models.provider import ProviderRow
@@ -52,6 +52,18 @@ class SqlSyncConfigurationRepository(
         found = await self._find(row.provider_id == provider_id, row.base == base.upper(),
                                  row.quote == quote.upper(), row.interval == interval, limit=1)
         return bool(found)
+
+    async def find_for(self, provider_id: UUID, base: str, quote: str,
+                       interval: IntervalKind) -> SyncConfig | None:
+        row = SyncConfigurationRow
+        return await self._find_one(row.provider_id == provider_id, row.base == base.upper(),
+                                    row.quote == quote.upper(), row.interval == interval)
+
+    async def list_active(self, interval: IntervalKind) -> list[SyncConfig]:
+        row = SyncConfigurationRow
+        return await self._find(row.is_active.is_(True), row.interval == interval,
+                                row.provider.has(ProviderRow.is_active),
+                                order_by=[row.base, row.quote, row.id])
 
     async def search(self, *, provider: str | None = None, is_active: bool | None = None,
                      page: int = 1, size: int = 50) -> Page[SyncConfig]:

@@ -20,12 +20,14 @@ from domain.alerts import Alert, AlertRule, AlertTier
 from domain.enums import (
     AlertSeverity,
     AlertStatus,
+    CurrencyKind,
     IntervalKind,
     PriceDirection,
     SyncState,
     SyncStatus,
     UserRole,
 )
+from domain.models import Currency
 from domain.users import User
 
 
@@ -203,6 +205,17 @@ class TokenOut(BaseModel):
     def of(cls, signed_in: SignedIn) -> TokenOut:
         return cls(access_token=signed_in.token.access_token,
                    expires_in=signed_in.token.expires_in, user=UserOut.of(signed_in.user))
+
+
+class CurrencyOut(BaseModel):
+    code: str
+    name: str
+    kind: CurrencyKind
+    icon_url: str | None
+
+    @classmethod
+    def of(cls, currency: Currency, icon_url: str | None) -> CurrencyOut:
+        return cls(code=currency.code, name=currency.name, kind=currency.kind, icon_url=icon_url)
 
 
 class FeedOut(BaseModel):

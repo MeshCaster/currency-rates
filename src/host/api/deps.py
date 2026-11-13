@@ -7,6 +7,7 @@ from application import (
     AlertRuleService,
     AlertService,
     AuthService,
+    CurrencyQueryService,
     FeedQueryService,
     IssuedToken,
     SubscriptionService,
@@ -41,6 +42,10 @@ def get_sync_configuration_admin_service(session: DbSessionDep) -> SyncConfigura
     return SyncConfigurationAdminService(SqlProviderRepository(session),
                                          SqlSyncConfigurationRepository(session),
                                          HistoryProviders.KEYS)
+
+
+def get_currency_query_service(session: DbSessionDep) -> CurrencyQueryService:
+    return CurrencyQueryService(SqlProviderRepository(session))
 
 
 def get_alert_rule_service(session: DbSessionDep, settings: SettingsDep) -> AlertRuleService:

@@ -5,7 +5,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from domain.enums import IntervalKind, ProviderKind
-from domain.models import IntervalCapability, ProviderCapability, ProviderPair
+from domain.models import Currency, IntervalCapability, ProviderCapability, ProviderPair
+from infrastructure.db.models.currency import CurrencyRow
 from infrastructure.db.models.provider import ProviderIntervalRow, ProviderPairRow, ProviderRow
 
 
@@ -65,6 +66,10 @@ class SqlProviderRepository:
             select(ProviderPairRow).join(ProviderRow)
             .order_by(ProviderRow.key, ProviderPairRow.base, ProviderPairRow.quote))).all()
         return [_pair(r) for r in rows]
+
+    async def currencies(self) -> list[Currency]:
+        rows = (await self._session.scalars(select(CurrencyRow).order_by(CurrencyRow.code))).all()
+        return [Currency(code=r.code, name=r.name, kind=r.kind, icon=r.icon) for r in rows]
 
     @staticmethod
     def _select():  # type: ignore[no-untyped-def]

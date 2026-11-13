@@ -23,7 +23,7 @@ export default function App() {
       <div className="band">
         <div className="page">
           <header className="topbar">
-            <div className="brand"><span className="logo">¤</span>Rates Admin</div>
+            <div className="brand"><img className="logo" src="/meshcaster-mark.svg" alt="" /><span className="brand-text">Rates Admin<small>Meshcaster</small></span></div>
             <nav>
               <span className="muted">{session.user.email}</span>
               <button className="link" onClick={signOut}>Sign out</button>
@@ -64,7 +64,7 @@ function Login({ onSignedIn }: { onSignedIn: (s: Session) => void }) {
     <div className="band login-screen">
     <form className="card dialog login" onSubmit={submit}>
       <div className="dialog-head">
-        <div className="logo">¤</div>
+        <img className="logo" src="/meshcaster-mark.svg" alt="" />
         <h2>Rates Admin</h2>
         <p className="muted small">Sign in with an admin account.</p>
       </div>

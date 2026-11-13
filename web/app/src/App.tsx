@@ -45,7 +45,7 @@ export default function App() {
       <div className="band">
         <div className="page">
           <header className="topbar">
-            <div className="brand"><span className="logo">¤</span>Currency Rates</div>
+            <div className="brand"><img className="logo" src="/meshcaster-mark.svg" alt="" /><span className="brand-text">Currency Rates<small>Meshcaster</small></span></div>
             <nav>
               {session ? (
                 <>

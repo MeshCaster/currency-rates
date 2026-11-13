@@ -28,7 +28,7 @@ export function AuthPanel({ onSignedIn, onClose }:
     <div className="overlay" onClick={onClose}>
       <form className="card dialog" onClick={(e) => e.stopPropagation()} onSubmit={submit}>
         <div className="dialog-head">
-          <div className="logo">¤</div>
+          <img className="logo" src="/meshcaster-mark.svg" alt="" />
           <h2>{mode === "signin" ? "Welcome back" : "Create your account"}</h2>
           <p className="muted small">Get your favourite rates by email every day.</p>
         </div>

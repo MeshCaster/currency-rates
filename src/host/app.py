@@ -1,6 +1,8 @@
 import logging
+from pathlib import Path
 
 from fastapi import FastAPI
+from fastapi.staticfiles import StaticFiles
 
 from core.configuration.settings import Settings, get_settings
 from core.exceptions.handlers.register import register_exception_handlers
@@ -9,6 +11,7 @@ from core.logging import configure_logging
 from core.middleware.setup import setup_middleware
 from host.api.alerts import alerts_router, rules_router
 from host.api.auth import router as auth_router
+from host.api.currencies import router as currencies_router
 from host.api.health import router as health_router
 from host.api.subscriptions import router as subscriptions_router
 from host.api.sync_configurations import router as sync_configurations_router
@@ -40,4 +43,8 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.include_router(alerts_router, prefix=settings.api_prefix)
     app.include_router(auth_router, prefix=settings.api_prefix)
     app.include_router(subscriptions_router, prefix=settings.api_prefix)
+    app.include_router(currencies_router, prefix=settings.api_prefix)
+    storage = settings.storage
+    if storage.is_served_locally and Path(storage.path).is_dir():
+        app.mount(storage.public_url, StaticFiles(directory=storage.path), name="storage")
     return app

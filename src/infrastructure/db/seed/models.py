@@ -12,6 +12,10 @@ class CurrencySeed:
     name: str
     kind: CurrencyKind
 
+    @property
+    def icon(self) -> str:
+        return f"currency-icons/{self.code.lower()}.svg"
+
 
 @dataclass(frozen=True, slots=True)
 class PairSeed:

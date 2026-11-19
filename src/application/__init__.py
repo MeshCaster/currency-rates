@@ -18,6 +18,7 @@ from application.services.notifications.digest import (
                                compose_digest,
                                plan_digests,
 )
+from application.services.rate.currency_query_service import CurrencyQueryService
 from application.services.rate.feed_query_service import FeedQueryService, FeedView
 from application.services.rate.models import (
                                ConfigSyncResult,
@@ -51,4 +52,4 @@ __all__ = ["RateRepository", "RateHistoryProvider", "SyncConfigurationRepository
            "SubscriptionService", "SubscriptionView", "UserRepository", "SubscriptionRepository",
            "EmailSender",
            "ComposedEmail", "Digest", "FeedQuote", "compose_digest", "plan_digests",
-           "FeedQueryService", "FeedView"]
+           "FeedQueryService", "FeedView", "CurrencyQueryService"]

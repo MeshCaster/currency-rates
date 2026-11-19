@@ -10,6 +10,7 @@ export interface Feed {
   value: string | null; as_of: string | null; previous_value: string | null;
   change_percent: string | null;
 }
+export interface Currency { code: string; name: string; kind: string; icon_url: string | null }
 export interface FeedPoint { day: string; value: string }
 export interface Subscription {
   id: string; feed: { id: string; provider: string; base: string; quote: string };
@@ -75,6 +76,7 @@ export const api = {
     saveSession(session);
     return session;
   },
+  currencies: () => request<Currency[]>("GET", "/currencies"),
   feeds: () => request<Feed[]>("GET", "/feeds"),
   history: (feedId: string, days: number) =>
     request<FeedPoint[]>("GET", `/feeds/${feedId}/history?days=${days}`),

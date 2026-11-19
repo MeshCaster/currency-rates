@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { api, browserTimeZone, formatChange, formatRate } from "./api";
-import type { Feed } from "./api";
+import type { Currency, Feed } from "./api";
 
 interface Props {
   feeds: Feed[];
@@ -100,7 +100,26 @@ export function Pair({ base, quote }: { base: string; quote: string }) {
   );
 }
 
+let catalog: Promise<Map<string, Currency>> | null = null;
+function useCurrency(code: string): Currency | undefined {
+  const [currencies, setCurrencies] = useState<Map<string, Currency>>();
+  useEffect(() => {
+    catalog ??= api.currencies().then((all) => new Map(all.map((c) => [c.code, c])),
+                                      () => { catalog = null; return new Map(); });
+    let live = true;
+    catalog.then((found) => live && setCurrencies(found));
+    return () => { live = false; };
+  }, []);
+  return currencies?.get(code);
+}
+
 function Coin({ code }: { code: string }) {
+  const currency = useCurrency(code);
+  const [broken, setBroken] = useState(false);
+  if (currency?.icon_url && !broken) {
+    return <img className="coin" src={currency.icon_url} alt="" title={currency.name}
+                onError={() => setBroken(true)} />;
+  }
   let hash = 0;
   for (const ch of code) hash = (hash * 47 + ch.charCodeAt(0) * 13) % 360;
   const bg = `linear-gradient(135deg, hsl(${hash} 75% 55%), hsl(${(hash + 40) % 360} 70% 45%))`;

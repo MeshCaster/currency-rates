@@ -4,7 +4,7 @@ from decimal import Decimal
 from typing import Any
 from uuid import UUID
 
-from domain.enums import IntervalKind, ProviderKind, SyncState, SyncStatus
+from domain.enums import CurrencyKind, IntervalKind, ProviderKind, SyncState, SyncStatus
 
 
 @dataclass(frozen=True, slots=True)
@@ -15,6 +15,13 @@ class Rate:
     value: Decimal
     source: str
     as_of: datetime
+
+@dataclass(frozen=True, slots=True)
+class Currency:
+    code: str
+    name: str
+    kind: CurrencyKind
+    icon: str | None = None
 
 @dataclass(frozen=True, slots=True)
 class IntervalCapability:

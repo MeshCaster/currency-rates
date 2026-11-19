@@ -13,3 +13,4 @@ class CurrencyRow(IdentityMixin, AuditedBase):
     code: Mapped[str] = mapped_column(String(10), unique=True)
     name: Mapped[str] = mapped_column(String(64))
     kind: Mapped[CurrencyKind] = mapped_column(enum_column(CurrencyKind))
+    icon: Mapped[str | None] = mapped_column(String(255))

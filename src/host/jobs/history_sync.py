@@ -2,7 +2,7 @@ import asyncio
 import logging
 from collections import Counter
 from collections.abc import Callable, Mapping
-from datetime import date
+from datetime import date, timedelta
 from enum import StrEnum
 from typing import Any
 
@@ -14,7 +14,8 @@ from core.database.errors import ConcurrencyError
 from core.database.session import Database
 from core.jobs.base import PeriodicJob
 from core.jobs.locking import try_advisory_xact_lock
-from domain.models import SyncConfig
+from domain import IntervalKind
+from domain.models import SyncConfig, Rate
 from infrastructure.db.repositories.rate_repository import SqlRateRepository
 from infrastructure.db.repositories.sync_configuration_repository import (
     SqlSyncConfigurationRepository,
@@ -70,13 +71,17 @@ class SyncConfigurationJob(PeriodicJob):
         label = f"{config.provider} {config.base}/{config.quote} {config.interval}"
         try:
             async with asyncio.timeout(self._settings.config_timeout_seconds):
+                rates = await self.get_history(config, today)
+                end = await self.find_end(config, today)
+
                 async with self._db.transaction() as session:
                     if not await try_advisory_xact_lock(session, f"sync-config:{config.id}"):
                         return Outcome.SKIPPED
                     service = SyncConfigurationService(
-                        self._providers(config.provider, config.options),
-                        SqlSyncConfigurationRepository(session), SqlRateRepository(session))
-                    result = await service.run(config, today)
+                    self._providers(config.provider, config.options),
+                    SqlSyncConfigurationRepository(session), SqlRateRepository(session))
+                    await service.upsert_rates(rates, config)
+                    await service.advance(config, end)
         except ConcurrencyError:
             logger.debug("%s: %s was advanced by another worker", self.name, label)
             return Outcome.SKIPPED
@@ -86,13 +91,28 @@ class SyncConfigurationJob(PeriodicJob):
             await self._record_failure(config, error)
             return Outcome.FAILED
 
-        if result.provisional:
-            logger.debug("%s: %s %s (provisional) fetched %d, changed %d", self.name, label,
-                         result.start, result.fetched, result.stored)
-            return Outcome.REFRESHED
-        logger.info("%s: %s %s..%s fetched %d, stored %d", self.name, label,
-                    result.start, result.end, result.fetched, result.stored)
         return Outcome.SYNCED
+
+    async def get_history(self, config : SyncConfig, today: date) -> list[Rate]:
+        provider = self._providers(config.provider, config.options)
+        end = min(config.next_date + timedelta(days=provider.chunk_days - 1),
+                  today - timedelta(days=1))
+        if config.date_to is not None:
+            end = min(end, config.date_to + timedelta(days=1))
+
+        rates = await provider.get_history(config.base, config.quote, config.next_date, end, config.interval)
+
+        return rates
+
+    async def find_end(self, config: SyncConfig, today: date) -> date:
+        start = config.next_date
+
+        end = min(start + timedelta(days=self._provider.chunk_days - 1),
+                  today - timedelta(days=1))
+        if config.date_to is not None:
+            end = min(end, config.date_to)
+
+        return end
 
     async def _record_failure(self, config: SyncConfig, error: str) -> None:
         try:
